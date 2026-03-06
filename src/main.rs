@@ -192,9 +192,9 @@ fn main() -> Result<()> {
     capture.run(audio_tx, running, ptt_active)?;
 
     info!("Stopping...");
-    // Channels will be dropped, threads will exit
-    drop(capture);
-    let _ = transcriber_handle.join();
+    drop(capture); // drops CPAL stream → audio_tx drops → audio_rx closes → transcriber exits
+    let _ = transcriber_handle.join(); // transcriber exits, drops text_tx_t
+    drop(text_tx); // close last text sender so typer can exit
     let _ = typer_handle.join();
 
     Ok(())
