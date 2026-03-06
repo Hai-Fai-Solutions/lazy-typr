@@ -160,20 +160,17 @@ fn main() -> Result<()> {
             }
         };
         info!("Whisper model loaded ✓");
-        loop {
-            match audio_rx.recv() {
-                Ok(samples) => match transcriber.transcribe(&samples) {
-                    Ok(Some(text)) => {
-                        let text = text.trim().to_string();
-                        if !text.is_empty() {
-                            info!("Transcribed: \"{}\"", text);
-                            let _ = text_tx_t.send(text);
-                        }
+        while let Ok(samples) = audio_rx.recv() {
+            match transcriber.transcribe(&samples) {
+                Ok(Some(text)) => {
+                    let text = text.trim().to_string();
+                    if !text.is_empty() {
+                        info!("Transcribed: \"{}\"", text);
+                        let _ = text_tx_t.send(text);
                     }
-                    Ok(None) => {}
-                    Err(e) => error!("Transcription error: {}", e),
-                },
-                Err(_) => break, // channel closed
+                }
+                Ok(None) => {}
+                Err(e) => error!("Transcription error: {}", e),
             }
         }
     });
@@ -182,14 +179,9 @@ fn main() -> Result<()> {
     let config_ty = config.clone();
     let typer_handle = std::thread::spawn(move || {
         let typer = Typer::new(config_ty.dry_run);
-        loop {
-            match text_rx.recv() {
-                Ok(text) => {
-                    if let Err(e) = typer.type_text(&text) {
-                        error!("Failed to type text: {}", e);
-                    }
-                }
-                Err(_) => break,
+        while let Ok(text) = text_rx.recv() {
+            if let Err(e) = typer.type_text(&text) {
+                error!("Failed to type text: {}", e);
             }
         }
     });
