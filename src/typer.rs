@@ -1,5 +1,9 @@
 use anyhow::{Context, Result};
-use tracing::{debug, info};
+use tracing::{debug, info, warn};
+
+/// Arguments for wtype to send Ctrl+V.
+/// -M presses the modifier, -k sends the key, -m releases the modifier.
+const WTYPE_PASTE_ARGS: &[&str] = &["-M", "ctrl", "-k", "v", "-m", "ctrl"];
 
 enum Backend {
     X11,
@@ -9,9 +13,26 @@ enum Backend {
 pub struct Typer {
     dry_run: bool,
     backend: Backend,
+    tool_available: bool,
 }
 
 impl Typer {
+    /// Returns `true` if the backend binary is on PATH and exits successfully.
+    /// Stdout and stderr are suppressed; the probe exits quickly via `--version`.
+    fn probe_tool(backend: &Backend) -> bool {
+        let (cmd, arg) = match backend {
+            Backend::Wayland => ("wtype", "--version"),
+            Backend::X11 => ("xdotool", "version"),
+        };
+        std::process::Command::new(cmd)
+            .arg(arg)
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false)
+    }
+
     pub fn new(dry_run: bool) -> Self {
         let backend = if std::env::var("WAYLAND_DISPLAY").is_ok() {
             info!("Wayland display detected — using wtype");
@@ -19,7 +40,29 @@ impl Typer {
         } else {
             Backend::X11
         };
-        Self { dry_run, backend }
+
+        let tool_available = if dry_run {
+            true // no external tools needed in dry-run
+        } else {
+            let available = Self::probe_tool(&backend);
+            if !available {
+                let tool = match &backend {
+                    Backend::Wayland => "wtype",
+                    Backend::X11 => "xdotool",
+                };
+                warn!(
+                    "{} not found on PATH; direct typing disabled, clipboard paste will be used",
+                    tool
+                );
+            }
+            available
+        };
+
+        Self {
+            dry_run,
+            backend,
+            tool_available,
+        }
     }
 
     /// Type the given text into the currently focused window.
@@ -39,17 +82,21 @@ impl Typer {
 
         match self.backend {
             Backend::X11 => {
-                if self.type_with_xdotool(&text_with_space).is_ok() {
+                if self.tool_available && self.type_with_xdotool(&text_with_space).is_ok() {
                     return Ok(());
                 }
-                info!("xdotool failed, falling back to clipboard paste");
+                if self.tool_available {
+                    info!("xdotool failed, falling back to clipboard paste");
+                }
                 self.type_with_clipboard_x11(&text_with_space)
             }
             Backend::Wayland => {
-                if self.type_with_wtype(&text_with_space).is_ok() {
+                if self.tool_available && self.type_with_wtype(&text_with_space).is_ok() {
                     return Ok(());
                 }
-                info!("wtype failed, falling back to clipboard paste");
+                if self.tool_available {
+                    info!("wtype failed, falling back to clipboard paste");
+                }
                 self.type_with_clipboard_wayland(&text_with_space)
             }
         }
@@ -113,9 +160,9 @@ impl Typer {
         self.set_clipboard(text)?;
         std::thread::sleep(std::time::Duration::from_millis(50));
 
-        // wtype -k sends key combos; ctrl+v pastes in most Wayland apps
+        // wtype modifier syntax: -M presses a modifier, -k sends the key, -m releases the modifier
         let paste_result = std::process::Command::new("wtype")
-            .args(["-k", "ctrl+v"])
+            .args(WTYPE_PASTE_ARGS)
             .status();
 
         if let Ok(saved_text) = saved {
@@ -219,5 +266,59 @@ mod tests {
     fn test_dry_run_multiline_text() {
         let typer = Typer::new(true);
         assert!(typer.type_text("line one\nline two").is_ok());
+    }
+
+    /// Ensure the clipboard-wayland fallback uses correct wtype key syntax.
+    #[test]
+    fn test_wtype_key_combo_args_are_correct() {
+        // The correct wtype invocation for Ctrl+V is:
+        //   wtype -M ctrl -k v -m ctrl
+        // NOT:
+        //   wtype -k ctrl+v
+        assert_eq!(
+            WTYPE_PASTE_ARGS,
+            &["-M", "ctrl", "-k", "v", "-m", "ctrl"],
+            "wtype paste args must use modifier syntax, not compound key strings"
+        );
+    }
+
+    /// When tool is unavailable, type_text must skip direct typing and go straight
+    /// to clipboard paste (which may fail in a test environment — that's acceptable).
+    #[test]
+    fn test_type_text_skips_direct_typing_when_unavailable() {
+        // Construct Typer with tool_available=false directly to test this code path.
+        let typer = Typer {
+            dry_run: false,
+            backend: Backend::Wayland,
+            tool_available: false,
+        };
+        // We can't easily intercept subprocess calls, so this is a smoke test:
+        // it must not panic, and must not attempt to call wtype for direct typing.
+        let _ = typer.type_text("hello");
+    }
+
+    /// When wtype/xdotool is not on PATH, tool_available must be false.
+    #[test]
+    fn test_tool_available_false_when_binary_missing() {
+        let tmp = std::env::temp_dir().join("empty_path_for_test");
+        std::fs::create_dir_all(&tmp).unwrap();
+        let original = std::env::var("PATH").unwrap_or_default();
+
+        // Drop guard restores PATH even if the test panics
+        struct PathGuard(String);
+        impl Drop for PathGuard {
+            fn drop(&mut self) {
+                unsafe { std::env::set_var("PATH", &self.0) };
+            }
+        }
+        let _guard = PathGuard(original);
+
+        // SAFETY: intentional env mutation scoped to this test; restored by _guard
+        unsafe { std::env::set_var("PATH", &tmp) };
+        let typer = Typer::new(false);
+        assert!(
+            !typer.tool_available,
+            "tool_available should be false when binary is missing"
+        );
     }
 }

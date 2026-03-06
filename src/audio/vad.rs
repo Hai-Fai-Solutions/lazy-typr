@@ -43,19 +43,17 @@ impl Vad {
                 self.is_speaking = true;
                 return VadEvent::SpeechStart;
             }
-        } else {
-            if self.is_speaking {
-                self.silence_counter += samples.len();
-                if self.silence_counter >= self.silence_threshold_samples {
-                    self.is_speaking = false;
-                    let had_enough_speech = self.speech_counter >= self.min_speech_samples;
-                    self.speech_counter = 0;
-                    self.silence_counter = 0;
-                    if had_enough_speech {
-                        return VadEvent::SpeechEnd;
-                    } else {
-                        return VadEvent::SpeechTooShort;
-                    }
+        } else if self.is_speaking {
+            self.silence_counter += samples.len();
+            if self.silence_counter >= self.silence_threshold_samples {
+                self.is_speaking = false;
+                let had_enough_speech = self.speech_counter >= self.min_speech_samples;
+                self.speech_counter = 0;
+                self.silence_counter = 0;
+                if had_enough_speech {
+                    return VadEvent::SpeechEnd;
+                } else {
+                    return VadEvent::SpeechTooShort;
                 }
             }
         }

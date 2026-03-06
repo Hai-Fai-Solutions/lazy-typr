@@ -1,42 +1,42 @@
 # whisper-type 🎤
 
-Echtzeit Speech-to-Text für Linux — transkribiert deine Sprache lokal mit OpenAI Whisper und tippt den Text direkt in das aktive Eingabefeld.
+Real-time speech-to-text for Linux — transcribes your speech locally with OpenAI Whisper and types the text directly into the active input field.
 
-**Keine Cloud. Keine API-Keys. Vollständig offline.**
+**No cloud. No API keys. Fully offline.**
 
 ---
 
 ## Features
 
-- 🎙️ **Echtzeit-Aufnahme** via CPAL (ALSA/PulseAudio/Pipewire)
-- 🧠 **Lokale KI** via Whisper (ggml, kein Internet nötig)
-- ⌨️ **Automatisches Tippen** in jedes fokussierte Textfeld (Wayland: `wtype`, X11: `xdotool`)
-- 🔇 **Voice Activity Detection** — sendet nur wenn du wirklich sprichst
-- 🎯 **Push-to-Talk** — optional: Taste halten zum Aufnehmen (VAD wird umgangen)
-- 🌍 **Mehrsprachig** — Deutsch, Englisch, und alle anderen Whisper-Sprachen
-- ⚡ **Multi-threaded** — Audio, VAD, Whisper und Typer laufen parallel
-- 🖥️ **Wayland & X11** — erkennt automatisch die Display-Umgebung
+- 🎙️ **Real-time recording** via CPAL (ALSA/PulseAudio/Pipewire)
+- 🧠 **Local AI** via Whisper (ggml, no internet required)
+- ⌨️ **Automatic typing** into any focused text field (Wayland: `wtype`, X11: `xdotool`)
+- 🔇 **Voice Activity Detection** — only sends audio when you are actually speaking
+- 🎯 **Push-to-Talk** — optional: hold a key to record (bypasses VAD)
+- 🌍 **Multilingual** — German, English, and all other Whisper languages
+- ⚡ **Multi-threaded** — audio, VAD, Whisper, and typer run in parallel
+- 🖥️ **Wayland & X11** — automatically detects the display environment
 
 ---
 
-## Schnellstart
+## Quick Start
 
 ```bash
-# 1. Setup (einmalig)
+# 1. Setup (once)
 chmod +x setup.sh
 ./setup.sh
 
-# 2. Starten
+# 2. Start
 whisper-type
 
-# 3. Sprechen — Text erscheint im aktiven Fenster
+# 3. Speak — text appears in the active window
 ```
 
 ---
 
-## Installation (manuell)
+## Installation (manual)
 
-### System-Abhängigkeiten
+### System Dependencies
 
 **Arch Linux:**
 ```bash
@@ -52,7 +52,7 @@ sudo apt install xdotool libasound2-dev pkg-config build-essential xclip
 sudo apt install wtype wl-clipboard
 ```
 
-### Whisper Model herunterladen
+### Download Whisper Model
 
 ```bash
 mkdir -p ~/.local/share/whisper-type
@@ -60,8 +60,8 @@ wget https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin \
      -O ~/.local/share/whisper-type/ggml-base.bin
 ```
 
-| Modell | Größe | Qualität | RAM |
-|--------|-------|----------|-----|
+| Model | Size | Quality | RAM |
+|-------|------|---------|-----|
 | tiny   | 75 MB | ⭐⭐ | ~1 GB |
 | **base** | **142 MB** | **⭐⭐⭐** | **~1 GB** |
 | small  | 466 MB | ⭐⭐⭐⭐ | ~2 GB |
@@ -76,67 +76,67 @@ cp target/release/whisper-type ~/.local/bin/
 
 ---
 
-## Verwendung
+## Usage
 
 ```
 USAGE:
     whisper-type [OPTIONS]
 
 OPTIONS:
-    -m, --model <PATH>        Pfad zur GGML-Modelldatei
-    -d, --device <NAME>       Audio-Eingabegerät (Standard: System-Default)
-    -l, --language <LANG>     Sprache (de, en, fr, ...) [Standard: de]
-        --silence-ms <MS>     Stille-Schwelle in ms [Standard: 800]
-        --list-devices        Verfügbare Audio-Geräte anzeigen
-        --dry-run             Text auf stdout ausgeben statt zu tippen
-        --ptt-key <KEY>       Push-to-Talk Taste (z.B. KEY_SPACE, KEY_CAPSLOCK, KEY_F1)
-        --log-level <LEVEL>   Log-Verbosität (error, warn, info, debug, trace)
-    -h, --help                Hilfe anzeigen
+    -m, --model <PATH>        Path to the GGML model file
+    -d, --device <NAME>       Audio input device (default: system default)
+    -l, --language <LANG>     Language (de, en, fr, ...) [default: de]
+        --silence-ms <MS>     Silence threshold in ms [default: 800]
+        --list-devices        List available audio devices
+        --dry-run             Print text to stdout instead of typing
+        --ptt-key <KEY>       Push-to-Talk key (e.g. KEY_SPACE, KEY_CAPSLOCK, KEY_F1)
+        --log-level <LEVEL>   Log verbosity (error, warn, info, debug, trace)
+    -h, --help                Show help
 ```
 
-### Beispiele
+### Examples
 
 ```bash
-# Deutsch (Standard)
+# German (default)
 whisper-type
 
-# Englisch
+# English
 whisper-type --language en
 
-# Anderes Mikrofon
+# Different microphone
 whisper-type --list-devices
 whisper-type --device "USB Audio"
 
-# Schnellere Reaktion (500ms Pause reicht)
+# Faster response (500ms pause is enough)
 whisper-type --silence-ms 500
 
-# Testen ohne zu tippen
+# Test without typing
 whisper-type --dry-run
 
-# Größeres Modell für bessere Genauigkeit
+# Larger model for better accuracy
 whisper-type --model ~/.local/share/whisper-type/ggml-small.bin
 
-# Detaillierte Logs für Fehlersuche
+# Detailed logs for debugging
 whisper-type --log-level debug
 
-# Nur Fehler anzeigen
+# Show errors only
 whisper-type --log-level warn
 
-# Push-to-Talk: Leertaste halten zum Aufnehmen
+# Push-to-Talk: hold spacebar to record
 whisper-type --ptt-key KEY_SPACE
 
-# Push-to-Talk: Capslock halten (gut für längere Aufnahmen)
+# Push-to-Talk: hold Capslock (good for longer recordings)
 whisper-type --ptt-key KEY_CAPSLOCK
 
-# Push-to-Talk: F12 als dedizierte PTT-Taste
+# Push-to-Talk: F12 as a dedicated PTT key
 whisper-type --ptt-key KEY_F12
 ```
 
 ---
 
-## Konfiguration
+## Configuration
 
-Gespeichert unter `~/.config/whisper-type/config.json`:
+Stored at `~/.config/whisper-type/config.json`:
 
 ```json
 {
@@ -152,39 +152,39 @@ Gespeichert unter `~/.config/whisper-type/config.json`:
 }
 ```
 
-| Parameter | Beschreibung | Standard |
+| Parameter | Description | Default |
 |-----------|-------------|---------|
-| `silence_threshold_ms` | Wie lange Stille, bis Segment gesendet wird (nur VAD-Modus) | `800` |
-| `min_speech_ms` | Minimale Sprachzeit, sonst verworfen (nur VAD-Modus) | `300` |
-| `vad_threshold` | Energie-Schwelle für Spracherkennung (0.0–1.0) | `0.01` |
-| `max_buffer_secs` | Maximale Aufnahmedauer pro Segment | `30.0` |
-| `log_level` | Log-Verbosität: `error`, `warn`, `info`, `debug`, `trace` | `"info"` |
-| `ptt_key` | Push-to-Talk Taste (z.B. `"KEY_SPACE"`). `null` = VAD-Modus | `null` |
+| `silence_threshold_ms` | How long silence must last before a segment is sent (VAD mode only) | `800` |
+| `min_speech_ms` | Minimum speech duration; shorter segments are discarded (VAD mode only) | `300` |
+| `vad_threshold` | Energy threshold for voice detection (0.0–1.0) | `0.01` |
+| `max_buffer_secs` | Maximum recording duration per segment | `30.0` |
+| `log_level` | Log verbosity: `error`, `warn`, `info`, `debug`, `trace` | `"info"` |
+| `ptt_key` | Push-to-Talk key (e.g. `"KEY_SPACE"`). `null` = VAD mode | `null` |
 
-**Log-Level Priorität** (von niedrig nach hoch): `config.json` → `--log-level` Flag → `RUST_LOG` Umgebungsvariable
+**Log level priority** (lowest to highest): `config.json` → `--log-level` flag → `RUST_LOG` environment variable
 
-### Push-to-Talk einrichten
+### Setting Up Push-to-Talk
 
-PTT liest direkt vom Kernel (`/dev/input`). Der Benutzer muss in der `input`-Gruppe sein:
+PTT reads directly from the kernel (`/dev/input`). The user must be in the `input` group:
 
 ```bash
 sudo usermod -aG input $USER
-# Neu einloggen oder:
+# Log out and back in, or:
 newgrp input
 ```
 
-Unterstützte Tasten: `KEY_SPACE`, `KEY_CAPSLOCK`, `KEY_SCROLLLOCK`, `KEY_PAUSE`,
+Supported keys: `KEY_SPACE`, `KEY_CAPSLOCK`, `KEY_SCROLLLOCK`, `KEY_PAUSE`,
 `KEY_LEFTCTRL`, `KEY_RIGHTCTRL`, `KEY_LEFTSHIFT`, `KEY_RIGHTSHIFT`,
 `KEY_LEFTALT`, `KEY_RIGHTALT`, `KEY_LEFTMETA`, `KEY_F1`–`KEY_F12`
 
-> Das `KEY_`-Präfix ist optional: `SPACE` und `KEY_SPACE` sind gleichwertig.
+> The `KEY_` prefix is optional: `SPACE` and `KEY_SPACE` are equivalent.
 
 ---
 
-## Wie es funktioniert
+## How It Works
 
 ```
-Mikrofon (CPAL)
+Microphone (CPAL)
      │
      ▼
 Downmix → Mono
@@ -196,18 +196,18 @@ Resampling → 16kHz
 VAD (Energy-based)
      │  speech end detected
      ▼
-Whisper (ggml, lokal)
+Whisper (ggml, local)
      │
      ▼
-Text-Filter (Halluzinationen)
+Text Filter (hallucinations)
      │
      ▼
-wtype (Wayland) / xdotool (X11) → aktives Fenster
+wtype (Wayland) / xdotool (X11) → active window
 ```
 
 ---
 
-## Fehlerbehebung
+## Troubleshooting
 
 **`xdotool not found`**
 ```bash
@@ -216,13 +216,13 @@ sudo apt install xdotool
 
 **`No default input device found`**
 ```bash
-# PulseAudio/Pipewire prüfen
+# Check PulseAudio/Pipewire
 pactl list sources short
 whisper-type --list-devices
 ```
 
-**Text wird nicht getippt (Wayland)**
-`whisper-type` erkennt Wayland automatisch und nutzt `wtype`. Stelle sicher, dass `wtype` installiert ist:
+**Text is not typed (Wayland)**
+`whisper-type` detects Wayland automatically and uses `wtype`. Make sure `wtype` is installed:
 ```bash
 # Arch:
 sudo pacman -S wtype
@@ -230,27 +230,27 @@ sudo pacman -S wtype
 sudo apt install wtype
 ```
 
-**Whisper-Modell nicht gefunden**  
+**Whisper model not found**
 ```bash
-# Standardpfad:
+# Default path:
 ls ~/.local/share/whisper-type/
-# Oder explizit angeben:
-whisper-type --model /pfad/zum/modell.bin
+# Or specify explicitly:
+whisper-type --model /path/to/model.bin
 ```
 
-**Zu viele Halluzinationen bei Stille**
+**Too many hallucinations during silence**
 ```bash
-# VAD-Schwelle erhöhen (in ~/.config/whisper-type/config.json):
+# Increase the VAD threshold (in ~/.config/whisper-type/config.json):
 "vad_threshold": 0.02
-# Oder Push-to-Talk verwenden — nimmt nur auf, wenn Taste gehalten wird:
+# Or use Push-to-Talk — only records while the key is held:
 whisper-type --ptt-key KEY_SPACE
 ```
 
 **PTT: "No input device found"**
-Der Benutzer ist nicht in der `input`-Gruppe:
+The user is not in the `input` group:
 ```bash
 sudo usermod -aG input $USER
-# Neu einloggen, dann erneut versuchen
+# Log out and back in, then try again
 ```
 
 ---
@@ -260,7 +260,7 @@ sudo usermod -aG input $USER
 ### Prerequisites
 
 - Rust toolchain (stable): `rustup install stable`
-- System dependencies (see [Installation](#installation-manuell) above)
+- System dependencies (see [Installation](#installation-manual) above)
 - `whisper-rs` requires a C++ compiler and `cmake` for building whisper.cpp:
   ```bash
   # Arch:
@@ -363,6 +363,6 @@ cargo clippy -- -D warnings  # Lint (treat warnings as errors)
 
 ---
 
-## Lizenz
+## License
 
 MIT
