@@ -13,8 +13,6 @@ enum Backend {
 pub struct Typer {
     dry_run: bool,
     backend: Backend,
-    // Stored here; read in type_text once Task 3 consults it before invoking the external binary.
-    #[allow(dead_code)]
     tool_available: bool,
 }
 
@@ -84,17 +82,21 @@ impl Typer {
 
         match self.backend {
             Backend::X11 => {
-                if self.type_with_xdotool(&text_with_space).is_ok() {
+                if self.tool_available && self.type_with_xdotool(&text_with_space).is_ok() {
                     return Ok(());
                 }
-                info!("xdotool failed, falling back to clipboard paste");
+                if self.tool_available {
+                    info!("xdotool failed, falling back to clipboard paste");
+                }
                 self.type_with_clipboard_x11(&text_with_space)
             }
             Backend::Wayland => {
-                if self.type_with_wtype(&text_with_space).is_ok() {
+                if self.tool_available && self.type_with_wtype(&text_with_space).is_ok() {
                     return Ok(());
                 }
-                info!("wtype failed, falling back to clipboard paste");
+                if self.tool_available {
+                    info!("wtype failed, falling back to clipboard paste");
+                }
                 self.type_with_clipboard_wayland(&text_with_space)
             }
         }
@@ -278,6 +280,21 @@ mod tests {
             &["-M", "ctrl", "-k", "v", "-m", "ctrl"],
             "wtype paste args must use modifier syntax, not compound key strings"
         );
+    }
+
+    /// When tool is unavailable, type_text must skip direct typing and go straight
+    /// to clipboard paste (which may fail in a test environment — that's acceptable).
+    #[test]
+    fn test_type_text_skips_direct_typing_when_unavailable() {
+        // Construct Typer with tool_available=false directly to test this code path.
+        let typer = Typer {
+            dry_run: false,
+            backend: Backend::Wayland,
+            tool_available: false,
+        };
+        // We can't easily intercept subprocess calls, so this is a smoke test:
+        // it must not panic, and must not attempt to call wtype for direct typing.
+        let _ = typer.type_text("hello");
     }
 
     /// When wtype/xdotool is not on PATH, tool_available must be false.
