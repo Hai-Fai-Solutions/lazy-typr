@@ -1,0 +1,54 @@
+[package]
+name = "whisper-type"
+version = "0.1.0"
+edition = "2021"
+description = "Real-time speech-to-text that types into focused input fields"
+
+[[bin]]
+name = "whisper-type"
+path = "src/main.rs"
+
+[lib]
+name = "whisper_type"
+path = "src/lib.rs"
+
+[dependencies]
+# Audio capture
+cpal = "0.15"
+
+# Whisper bindings
+whisper-rs = { version = "0.11", features = [] }
+
+# Clipboard / xdotool interaction
+arboard = "3.3"
+
+# Synchronization / channels
+crossbeam-channel = "0.5"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Config & CLI
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+dirs = "5"
+anyhow = "1"
+thiserror = "1"
+ctrlc = "3"
+
+# Push-to-talk key detection (evdev reads /dev/input directly, works on X11 + Wayland)
+evdev = "0.12"
+
+# VAD (Voice Activity Detection) - simple energy-based
+[dev-dependencies]
+tempfile = "3"
+
+[build-dependencies]
+# nothing extra needed
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
