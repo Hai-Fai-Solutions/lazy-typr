@@ -1,7 +1,6 @@
 /// Simple energy-based Voice Activity Detection
 pub struct Vad {
     threshold: f32,
-    sample_rate: u32,
     silence_threshold_samples: usize,
     min_speech_samples: usize,
 
@@ -23,7 +22,6 @@ impl Vad {
 
         Self {
             threshold,
-            sample_rate,
             silence_threshold_samples,
             min_speech_samples,
             silence_counter: 0,
@@ -65,6 +63,7 @@ impl Vad {
         VadEvent::None
     }
 
+    #[allow(dead_code)]
     pub fn reset(&mut self) {
         self.silence_counter = 0;
         self.speech_counter = 0;

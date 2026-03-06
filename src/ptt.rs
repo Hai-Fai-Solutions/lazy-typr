@@ -4,7 +4,7 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
 };
-use tracing::{debug, error, info, warn};
+use tracing::{debug, info, warn};
 
 /// Parse a PTT key name to an evdev Key.
 ///
