@@ -1,0 +1,24 @@
+{
+  "enabledPlugins": {
+    "voltagent-lang@voltagent-subagents": true,
+    "voltagent-core-dev@voltagent-subagents": true,
+    "voltagent-infra@voltagent-subagents": true,
+    "voltagent-dev-exp@voltagent-subagents": true,
+    "voltagent-qa-sec@voltagent-subagents": true,
+    "superpowers@claude-plugins-official": true,
+    "claude-code-setup@claude-plugins-official": true
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /home/chris/develop/hai-fa-solutions/lazy-typr && cargo fmt 2>&1 && cargo clippy -- -D warnings 2>&1 | head -40"
+          }
+        ]
+      }
+    ]
+  }
+}
