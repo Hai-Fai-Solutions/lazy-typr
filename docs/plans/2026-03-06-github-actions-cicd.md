@@ -82,7 +82,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y cmake clang libasound2-dev \
+          sudo apt-get install -y cmake clang libasound2-dev libudev-dev \
             libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
 
       - name: Install Rust stable
@@ -114,7 +114,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y cmake clang libasound2-dev \
+          sudo apt-get install -y cmake clang libasound2-dev libudev-dev \
             libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
 
       - name: Install Rust stable
@@ -190,7 +190,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y cmake clang libasound2-dev \
+          sudo apt-get install -y cmake clang libasound2-dev libudev-dev \
             libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
 
       - name: Install Rust stable

@@ -18,7 +18,10 @@ Two GitHub Actions workflow files: one for CI (PR validation), one for release (
 - `cmake` — required by whisper-rs to compile whisper.cpp
 - `clang` — C++ compiler for whisper.cpp
 - `libasound2-dev` — ALSA headers for cpal
-- `libxdo-dev` — xdotool linkage
+- `libudev-dev` — required by evdev (pkg-config resolution)
+- `libxcb1-dev`, `libxcb-render0-dev`, `libxcb-shape0-dev`, `libxcb-xfixes0-dev` — XCB headers for arboard (clipboard)
+
+Note: `xdotool` and `wtype` are invoked as subprocesses at runtime — they are not linked libraries and need no dev headers in CI.
 
 **Cache:** `actions/cache` on `~/.cargo/registry`, `~/.cargo/git`, `target/`; keyed on `Cargo.lock` hash.
 
