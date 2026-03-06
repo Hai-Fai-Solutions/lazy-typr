@@ -1,6 +1,10 @@
 use anyhow::{Context, Result};
 use tracing::{debug, info};
 
+/// Arguments for wtype to send Ctrl+V.
+/// -M presses the modifier, -k sends the key, -m releases the modifier.
+const WTYPE_PASTE_ARGS: &[&str] = &["-M", "ctrl", "-k", "v", "-m", "ctrl"];
+
 enum Backend {
     X11,
     Wayland,
@@ -113,9 +117,9 @@ impl Typer {
         self.set_clipboard(text)?;
         std::thread::sleep(std::time::Duration::from_millis(50));
 
-        // wtype -k sends key combos; ctrl+v pastes in most Wayland apps
+        // wtype modifier syntax: -M presses a modifier, -k sends the key, -m releases the modifier
         let paste_result = std::process::Command::new("wtype")
-            .args(["-k", "ctrl+v"])
+            .args(WTYPE_PASTE_ARGS)
             .status();
 
         if let Ok(saved_text) = saved {
@@ -219,5 +223,19 @@ mod tests {
     fn test_dry_run_multiline_text() {
         let typer = Typer::new(true);
         assert!(typer.type_text("line one\nline two").is_ok());
+    }
+
+    /// Ensure the clipboard-wayland fallback uses correct wtype key syntax.
+    #[test]
+    fn test_wtype_key_combo_args_are_correct() {
+        // The correct wtype invocation for Ctrl+V is:
+        //   wtype -M ctrl -k v -m ctrl
+        // NOT:
+        //   wtype -k ctrl+v
+        assert_eq!(
+            WTYPE_PASTE_ARGS,
+            &["-M", "ctrl", "-k", "v", "-m", "ctrl"],
+            "wtype paste args must use modifier syntax, not compound key strings"
+        );
     }
 }
