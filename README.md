@@ -276,11 +276,16 @@ systemctl --user enable --now ydotoold
 `whisper-type` auto-detects `ydotool` on startup and prefers it over `wtype`/`xdotool`.
 
 **`ydotool: Cannot connect to ydotoold`**
-The `ydotoold` user daemon is not running:
+The `ydotoold` user daemon is not running. If your package ships a systemd unit:
 ```bash
 systemctl --user enable --now ydotoold
-# Verify:
 systemctl --user status ydotoold
+```
+If `ydotoold.service` does not exist (some Arch package versions):
+```bash
+# Start manually for the current session:
+ydotoold &
+# Or add to KDE autostart / ~/.config/autostart/ydotoold.desktop
 ```
 
 **Text is not typed (wlroots Wayland — Sway, Hyprland, etc.)**

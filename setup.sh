@@ -107,11 +107,15 @@ if [ "$DISTRO" = "arch" ]; then
         fi
         # Enable ydotoold user service if ydotool is now available
         if command -v ydotool &>/dev/null; then
-            if ! systemctl --user is-active --quiet ydotoold 2>/dev/null; then
+            if systemctl --user is-active --quiet ydotoold 2>/dev/null; then
+                ok "ydotoold service active"
+            elif systemctl --user list-unit-files ydotoold.service &>/dev/null 2>&1; then
                 log "Enabling ydotoold user service..."
                 systemctl --user enable --now ydotoold
             else
-                ok "ydotoold service active"
+                warn "ydotoold.service not found — start it manually before using whisper-type:"
+                warn "  ydotoold &"
+                warn "  Or add 'ydotoold' to your desktop autostart"
             fi
         fi
     fi
@@ -164,11 +168,15 @@ elif [ "$DISTRO" = "debian" ]; then
         fi
         # Enable ydotoold user service if ydotool is now available
         if command -v ydotool &>/dev/null; then
-            if ! systemctl --user is-active --quiet ydotoold 2>/dev/null; then
+            if systemctl --user is-active --quiet ydotoold 2>/dev/null; then
+                ok "ydotoold service active"
+            elif systemctl --user list-unit-files ydotoold.service &>/dev/null 2>&1; then
                 log "Enabling ydotoold user service..."
                 systemctl --user enable --now ydotoold
             else
-                ok "ydotoold service active"
+                warn "ydotoold.service not found — start it manually before using whisper-type:"
+                warn "  ydotoold &"
+                warn "  Or add 'ydotoold' to your desktop autostart"
             fi
         fi
     fi
