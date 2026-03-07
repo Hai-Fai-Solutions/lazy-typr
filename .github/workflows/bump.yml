@@ -22,6 +22,8 @@ jobs:
 
       - name: Install cocogitto
         uses: cocogitto/cocogitto-action@v3
+        with:
+          check: false
 
       - name: Configure git identity
         run: |
