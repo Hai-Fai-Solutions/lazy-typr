@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 This file is automatically maintained by [cocogitto](https://github.com/cocogitto/cocogitto).
 
 - - -
+## [v0.1.1](https://github.com/Hai-Fai-Solutions/lazy-typr/compare/d395d2321366efd5052b6fedd1298f0f58b35e1f..v0.1.1) - 2026-03-07
+#### Bug Fixes
+- handle nothing-to-bump gracefully in CI - ([d395d23](https://github.com/Hai-Fai-Solutions/lazy-typr/commit/d395d2321366efd5052b6fedd1298f0f58b35e1f)) - christian polzer
+
+- - -
+
 ## [v0.1.0](https://github.com/Hai-Fai-Solutions/lazy-typr/compare/v0.0.4..v0.1.0) - 2026-03-07
 #### Bug Fixes
 - simplify push step — always push follow-tags - ([821f410](https://github.com/Hai-Fai-Solutions/lazy-typr/commit/821f410e89835a592d51df5d7d89c06258272d72)) - christian polzer
