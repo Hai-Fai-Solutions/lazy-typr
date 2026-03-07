@@ -5,6 +5,7 @@ Real-time speech-to-text for Linux — transcribes your speech locally with Open
 **No cloud. No API keys. Fully offline.**
 
 ---
+ 
 
 ## Features
 
