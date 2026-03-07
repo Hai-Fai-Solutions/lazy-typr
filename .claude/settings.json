@@ -1,10 +1,5 @@
 {
   "enabledPlugins": {
-    "voltagent-lang@voltagent-subagents": true,
-    "voltagent-core-dev@voltagent-subagents": true,
-    "voltagent-infra@voltagent-subagents": true,
-    "voltagent-dev-exp@voltagent-subagents": true,
-    "voltagent-qa-sec@voltagent-subagents": true,
     "superpowers@claude-plugins-official": true,
     "claude-code-setup@claude-plugins-official": true
   },
