@@ -1,0 +1,41 @@
+name: Bump version
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  bump:
+    name: cog bump --auto
+    runs-on: ubuntu-latest
+    if: "github.event_name == 'workflow_dispatch' || !startsWith(github.event.head_commit.message, 'chore(version):')"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # cog needs full tag history to calculate bump
+          token: ${{ secrets.COG_TOKEN }}
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cocogitto
+        uses: cocogitto/cocogitto-action@v3
+        with:
+          check: false
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version
+        id: bump
+        run: cog bump --auto
+        continue-on-error: true
+
+      - name: Push bump commit and tag
+        if: steps.bump.outcome == 'success'
+        run: git push origin main && git push --tags

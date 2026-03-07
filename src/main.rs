@@ -5,7 +5,7 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
 };
-use tracing::{error, info};
+use tracing::{debug, error, info};
 
 use whisper_type::audio::{self, AudioCapture};
 use whisper_type::config::Config;
@@ -165,7 +165,7 @@ fn main() -> Result<()> {
                 Ok(Some(text)) => {
                     let text = text.trim().to_string();
                     if !text.is_empty() {
-                        info!("Transcribed: \"{}\"", text);
+                        debug!("Transcribed: \"{}\"", text);
                         let _ = text_tx_t.send(text);
                     }
                 }
@@ -192,9 +192,9 @@ fn main() -> Result<()> {
     capture.run(audio_tx, running, ptt_active)?;
 
     info!("Stopping...");
-    // Channels will be dropped, threads will exit
-    drop(capture);
-    let _ = transcriber_handle.join();
+    drop(capture); // drops CPAL stream → audio_tx drops → audio_rx closes → transcriber exits
+    let _ = transcriber_handle.join(); // transcriber exits, drops text_tx_t
+    drop(text_tx); // close last text sender so typer can exit
     let _ = typer_handle.join();
 
     Ok(())
