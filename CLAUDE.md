@@ -93,9 +93,9 @@ cargo clippy -- -D warnings
 ### Branching
 
 - `main` — stable, tagged releases; all PRs target here
-- `feature/*` or `bugfix/*` — short-lived branches off `main`
+- `feature/**` or `bugfix/**` — short-lived branches off `main`
 
-Releases: PR `feature/*` or `bugfix/*` → `main`; cocogitto auto-bumps version and tag on merge.
+Releases: PR `feature/**` or `bugfix/**` → `main`; cocogitto auto-bumps version and tag on merge.
 
 ## Known limitations / future work
 
