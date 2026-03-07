@@ -5,7 +5,7 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
 };
-use tracing::{error, info};
+use tracing::{debug, error, info};
 
 use whisper_type::audio::{self, AudioCapture};
 use whisper_type::config::Config;
@@ -165,7 +165,7 @@ fn main() -> Result<()> {
                 Ok(Some(text)) => {
                     let text = text.trim().to_string();
                     if !text.is_empty() {
-                        info!("Transcribed: \"{}\"", text);
+                        debug!("Transcribed: \"{}\"", text);
                         let _ = text_tx_t.send(text);
                     }
                 }
