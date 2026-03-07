@@ -1,0 +1,3 @@
+# Explicit anchor — add rustfmt overrides here as needed.
+# See: https://rust-lang.github.io/rustfmt/?version=stable
+edition = "2021"

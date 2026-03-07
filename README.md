@@ -357,10 +357,24 @@ git push origin v0.2.0
 ### Linting & formatting
 
 ```bash
-cargo fmt                  # Format code
-cargo fmt --check          # Check only (CI)
+cargo fmt                    # Format code
+cargo fmt --check            # Check only (CI)
 cargo clippy -- -D warnings  # Lint (treat warnings as errors)
 ```
+
+#### Pre-commit hook
+
+A pre-commit hook runs `cargo fmt` automatically before every commit. It is installed by cargo-husky the first time you run:
+
+```bash
+cargo test
+```
+
+No manual setup needed. After installation, any commit will auto-format staged Rust files and re-stage them before the commit lands.
+
+#### VSCode
+
+Open the repo in VSCode and install the recommended extension (`rust-lang.rust-analyzer`) when prompted. This enables format-on-save, so code is typically already formatted before the pre-commit hook runs.
 
 ---
 
