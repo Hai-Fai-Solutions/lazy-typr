@@ -32,7 +32,10 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Bump version
+        id: bump
         run: cog bump --auto
+        continue-on-error: true
 
       - name: Push bump commit and tag
+        if: steps.bump.outcome == 'success'
         run: git push origin main && git push --tags
