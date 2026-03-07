@@ -67,7 +67,7 @@ if [ "$DISTRO" = "arch" ]; then
 
     if [ ${#MISSING_PKGS[@]} -gt 0 ]; then
         log "Installing missing packages: ${MISSING_PKGS[*]}"
-        sudo pacman -S --noconfirm "${MISSING_PKGS[@]}"
+        sudo pacman -S --needed --noconfirm "${MISSING_PKGS[@]}"
     else
         ok "All system dependencies present"
     fi
@@ -75,21 +75,21 @@ if [ "$DISTRO" = "arch" ]; then
     # Optional: xclip for clipboard fallback (X11)
     if ! command -v xclip &>/dev/null && ! command -v xsel &>/dev/null; then
         warn "Neither xclip nor xsel found — installing xclip for clipboard fallback"
-        sudo pacman -S --noconfirm xclip
+        sudo pacman -S --needed --noconfirm xclip
     fi
 
     # Optional: wtype for Wayland text injection
     if [ "$XDG_SESSION_TYPE" = "wayland" ] || [ -n "${WAYLAND_DISPLAY:-}" ]; then
         if ! command -v wtype &>/dev/null; then
             log "Wayland session detected — installing wtype for text injection"
-            sudo pacman -S --noconfirm wtype
+            sudo pacman -S --needed --noconfirm wtype
         else
             ok "wtype (Wayland)"
         fi
         # wl-copy for Wayland clipboard fallback
         if ! command -v wl-copy &>/dev/null; then
             log "Installing wl-clipboard for Wayland clipboard fallback"
-            sudo pacman -S --noconfirm wl-clipboard
+            sudo pacman -S --needed --noconfirm wl-clipboard
         else
             ok "wl-clipboard"
         fi
@@ -186,6 +186,51 @@ else
     ok "Model downloaded: $MODEL_PATH"
 fi
 
+# --- GPU acceleration (optional) ---
+GPU_FEATURE=""
+USE_GPU_CFG="false"
+
+detect_gpu_vendor() {
+    if lspci 2>/dev/null | grep -qi "nvidia"; then
+        echo "nvidia"
+    elif lspci 2>/dev/null | grep -qi "amd\|radeon"; then
+        echo "amd"
+    else
+        echo "none"
+    fi
+}
+
+GPU_VENDOR=$(detect_gpu_vendor)
+
+if [ "$GPU_VENDOR" != "none" ]; then
+    echo ""
+    echo "GPU detected (${GPU_VENDOR}). Enable GPU acceleration? (faster inference)"
+    read -rp "Use GPU? [y/N]: " USE_GPU_ANSWER
+    if [[ "${USE_GPU_ANSWER,,}" == "y" ]]; then
+        USE_GPU_CFG="true"
+        if [ "$GPU_VENDOR" = "nvidia" ]; then
+            GPU_FEATURE="cuda"
+            if [ "$DISTRO" = "arch" ]; then
+                log "Installing CUDA toolkit..."
+                sudo pacman -S --needed --noconfirm cuda vulkan-headers
+            elif [ "$DISTRO" = "debian" ]; then
+                log "Installing CUDA toolkit..."
+                sudo apt-get install -y nvidia-cuda-toolkit libvulkan-dev
+            fi
+        elif [ "$GPU_VENDOR" = "amd" ]; then
+            GPU_FEATURE="vulkan"
+            if [ "$DISTRO" = "arch" ]; then
+                log "Installing Vulkan support for AMD..."
+                sudo pacman -S --needed --noconfirm vulkan-headers vulkan-icd-loader vulkan-radeon
+            elif [ "$DISTRO" = "debian" ]; then
+                log "Installing Vulkan support for AMD..."
+                sudo apt-get install -y libvulkan-dev mesa-vulkan-drivers
+            fi
+        fi
+        ok "GPU feature: ${GPU_FEATURE}"
+    fi
+fi
+
 # Write config
 CONFIG_DIR="$HOME/.config/whisper-type"
 mkdir -p "$CONFIG_DIR"
@@ -197,15 +242,22 @@ cat > "$CONFIG_DIR/config.json" << EOF
   "silence_threshold_ms": 800,
   "min_speech_ms": 300,
   "max_buffer_secs": 30.0,
-  "vad_threshold": 0.01
+  "vad_threshold": 0.01,
+  "use_gpu": $USE_GPU_CFG,
+  "gpu_device": null
 }
 EOF
 ok "Config written to $CONFIG_DIR/config.json"
 
 # --- Build ---
 echo ""
-log "Building whisper-type (this may take a few minutes the first time)..."
-cargo build --release
+if [ -n "$GPU_FEATURE" ]; then
+    log "Building whisper-type with GPU support (--features ${GPU_FEATURE}) — this may take several minutes..."
+    cargo build --release --features "$GPU_FEATURE"
+else
+    log "Building whisper-type (CPU only) — this may take a few minutes the first time..."
+    cargo build --release
+fi
 
 BINARY="./target/release/whisper-type"
 if [ -f "$BINARY" ]; then
@@ -238,6 +290,7 @@ echo "  whisper-type                   # Start with saved config"
 echo "  whisper-type --list-devices    # Show audio devices"
 echo "  whisper-type --language en     # Transcribe English"
 echo "  whisper-type --dry-run         # Print text instead of typing"
+echo "  whisper-type --gpu             # Enable GPU acceleration"
 echo "  whisper-type --help            # All options"
 echo ""
 echo "While running: speak naturally, pause to commit. Ctrl+C to stop."

@@ -12,12 +12,20 @@ path = "src/main.rs"
 name = "whisper_type"
 path = "src/lib.rs"
 
+[features]
+default = []
+cuda    = ["whisper-rs/cuda"]
+hipblas = ["whisper-rs/hipblas"]
+vulkan  = ["whisper-rs/vulkan"]
+
 [dependencies]
 # Audio capture
 cpal = "0.15"
 
 # Whisper bindings
-whisper-rs = { version = "0.11", features = [] }
+# 0.14+ bundles whisper.cpp with CUDA arch >= 60 (Pascal), required for CUDA 12+.
+# 0.11 hardcoded compute_52 which CUDA 12+ dropped.
+whisper-rs = { version = "0.14", features = [] }
 
 # Clipboard / xdotool interaction
 arboard = "3.3"
