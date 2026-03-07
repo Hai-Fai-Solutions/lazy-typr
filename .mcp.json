@@ -1,34 +1,11 @@
 {
-  "mcpServers": {
-    "context7": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "-y",
-        "@upstash/context7-mcp"
-      ],
-      "env": {}
-    },
-    "github": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-github"
-      ],
-      "env": {}
-    },
-    "jcodemunch": {
-      "type": "stdio",
-      "command": "uvx",
-      "args": [
-        "jcodemunch-mcp",
-        "--log-level",
-        "DEBUG",
-        "--log-file",
-        "/tmp/jcodemunch.log\n"
-      ],
-      "env": {}
-    }
+  "github": {
+    "type": "stdio",
+    "command": "npx",
+    "args": [
+      "-y",
+      "@modelcontextprotocol/server-github"
+    ],
+    "env": {}
   }
 }

@@ -1,6 +1,6 @@
 ---
 name: release
-description: Cut a new whisper-type release - run tests, bump version in Cargo.toml, PR develop→main, tag vX.Y.Z
+description: Cut a new whisper-type release - run tests, open PR develop→main; CI handles version bump, tagging, and publishing
 disable-model-invocation: true
 ---
 
@@ -15,26 +15,16 @@ Steps to cut a release:
    ```
    Stop if either fails — do not proceed with a broken build.
 
-3. Ask the user for the new version number (e.g. `0.2.0`).
+3. Push the `develop` branch and open a PR from `develop` → `main` with:
+   - Title: `Release` (CI determines the exact version from conventional commits)
+   - Body: summary of unreleased changes (`git log $(git describe --tags --abbrev=0)..HEAD --oneline`)
 
-4. Update `version = "..."` in `Cargo.toml` to the new version. Run `cargo build` to regenerate `Cargo.lock`.
+4. Wait for the user to confirm the PR is merged.
 
-5. Stage and commit:
-   ```
-   git add Cargo.toml Cargo.lock
-   git commit -m "chore: bump version to vX.Y.Z"
-   ```
+   CI will automatically:
+   - Run `cog bump --auto` to determine the new semver version from commit types
+   - Update `Cargo.toml`, `Cargo.lock`, and `CHANGELOG.md`
+   - Commit with `chore(version): X.Y.Z [skip ci]` and push an annotated tag
+   - Trigger `release.yml` to build, strip, and publish the GitHub Release
 
-6. Push the `develop` branch and open a PR from `develop` → `main` with:
-   - Title: `Release vX.Y.Z`
-   - Body: summary of changes since the last tag (`git log <last-tag>..HEAD --oneline`)
-
-7. Wait for the user to confirm the PR is merged. Then:
-   ```
-   git checkout main && git pull
-   git tag -a vX.Y.Z -m "Release vX.Y.Z"
-   git push origin vX.Y.Z
-   git checkout develop
-   ```
-
-8. Report the tag URL and confirm completion.
+5. Report that the release pipeline is running and share the Actions URL for the user to monitor.
