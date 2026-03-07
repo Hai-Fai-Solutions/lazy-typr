@@ -92,11 +92,10 @@ cargo clippy -- -D warnings
 
 ### Branching
 
-- `main` — stable, tagged releases
-- `develop` — integration branch; all PRs target here
-- `feature/*` — short-lived branches off `develop`
+- `main` — stable, tagged releases; all PRs target here
+- `feature/**` or `bugfix/**` — short-lived branches off `main`
 
-Releases: PR `develop` → `main`, then `git tag -a vX.Y.Z`.
+Releases: PR `feature/**` or `bugfix/**` → `main`; cocogitto auto-bumps version and tag on merge.
 
 ## Known limitations / future work
 
