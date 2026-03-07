@@ -3,11 +3,10 @@ name: CI
 on:
   push:
     branches:
-      - develop
       - "feature/**"
+      - "bugfix/**"
   pull_request:
     branches:
-      - develop
       - main
 
 env:
