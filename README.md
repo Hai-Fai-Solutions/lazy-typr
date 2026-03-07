@@ -11,7 +11,7 @@ Real-time speech-to-text for Linux — transcribes your speech locally with Open
 
 - 🎙️ **Real-time recording** via CPAL (ALSA/PulseAudio/Pipewire)
 - 🧠 **Local AI** via Whisper (ggml, no internet required)
-- ⌨️ **Automatic typing** into any focused text field (Wayland: `wtype`, X11: `xdotool`)
+- ⌨️ **Automatic typing** into any focused text field (`ydotool` for KDE/any compositor, `wtype` for wlroots Wayland, `xdotool` for X11)
 - 🔇 **Voice Activity Detection** — only sends audio when you are actually speaking
 - 🎯 **Push-to-Talk** — optional: hold a key to record (bypasses VAD)
 - 🌍 **Multilingual** — German, English, and all other Whisper languages
@@ -45,6 +45,9 @@ whisper-type
 sudo pacman -S xdotool alsa-lib pkgconf base-devel xclip
 # Wayland (Hyprland, Sway, etc.):
 sudo pacman -S wtype wl-clipboard
+# KDE Wayland (or any compositor — ydotool works everywhere):
+sudo pacman -S ydotool
+systemctl --user enable --now ydotoold
 ```
 
 **Debian/Ubuntu:**
@@ -52,6 +55,9 @@ sudo pacman -S wtype wl-clipboard
 sudo apt install xdotool libasound2-dev pkg-config build-essential xclip
 # Wayland:
 sudo apt install wtype wl-clipboard
+# KDE Wayland (or any compositor):
+sudo apt install ydotool
+systemctl --user enable --now ydotoold
 ```
 
 ### Download Whisper Model
@@ -256,8 +262,29 @@ pactl list sources short
 whisper-type --list-devices
 ```
 
-**Text is not typed (Wayland)**
-`whisper-type` detects Wayland automatically and uses `wtype`. Make sure `wtype` is installed:
+**Text is not typed (KDE Wayland)**
+`wtype` does not work on KDE Plasma because KDE does not implement the `zwlr_virtual_keyboard_v1`
+protocol. Install `ydotool` instead — it writes via `/dev/uinput` and works on any compositor:
+```bash
+# Arch:
+sudo pacman -S ydotool
+systemctl --user enable --now ydotoold
+# Debian/Ubuntu:
+sudo apt install ydotool
+systemctl --user enable --now ydotoold
+```
+`whisper-type` auto-detects `ydotool` on startup and prefers it over `wtype`/`xdotool`.
+
+**`ydotool: Cannot connect to ydotoold`**
+The `ydotoold` user daemon is not running:
+```bash
+systemctl --user enable --now ydotoold
+# Verify:
+systemctl --user status ydotoold
+```
+
+**Text is not typed (wlroots Wayland — Sway, Hyprland, etc.)**
+`whisper-type` uses `wtype` on wlroots compositors. Make sure it is installed:
 ```bash
 # Arch:
 sudo pacman -S wtype

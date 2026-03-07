@@ -78,7 +78,7 @@ if [ "$DISTRO" = "arch" ]; then
         sudo pacman -S --needed --noconfirm xclip
     fi
 
-    # Optional: wtype for Wayland text injection
+    # Optional: wtype for Wayland text injection (wlroots compositors: Sway, Hyprland, etc.)
     if [ "$XDG_SESSION_TYPE" = "wayland" ] || [ -n "${WAYLAND_DISPLAY:-}" ]; then
         if ! command -v wtype &>/dev/null; then
             log "Wayland session detected — installing wtype for text injection"
@@ -92,6 +92,27 @@ if [ "$DISTRO" = "arch" ]; then
             sudo pacman -S --needed --noconfirm wl-clipboard
         else
             ok "wl-clipboard"
+        fi
+
+        # ydotool: compositor-agnostic input injection (required for KDE Wayland)
+        if ! command -v ydotool &>/dev/null; then
+            if [[ "${XDG_CURRENT_DESKTOP,,}" == *"kde"* ]]; then
+                log "KDE Wayland detected — installing ydotool (wtype is not supported on KDE)"
+                sudo pacman -S --needed --noconfirm ydotool
+            else
+                warn "ydotool not found — optional but recommended for KDE Wayland users"
+            fi
+        else
+            ok "ydotool"
+        fi
+        # Enable ydotoold user service if ydotool is now available
+        if command -v ydotool &>/dev/null; then
+            if ! systemctl --user is-active --quiet ydotoold 2>/dev/null; then
+                log "Enabling ydotoold user service..."
+                systemctl --user enable --now ydotoold
+            else
+                ok "ydotoold service active"
+            fi
         fi
     fi
 
@@ -115,7 +136,7 @@ elif [ "$DISTRO" = "debian" ]; then
         sudo apt-get install -y xclip
     fi
 
-    # Optional: wtype + wl-clipboard for Wayland
+    # Optional: wtype + wl-clipboard for Wayland (wlroots compositors)
     if [ "$XDG_SESSION_TYPE" = "wayland" ] || [ -n "${WAYLAND_DISPLAY:-}" ]; then
         if ! command -v wtype &>/dev/null; then
             log "Wayland session detected — installing wtype for text injection"
@@ -128,6 +149,27 @@ elif [ "$DISTRO" = "debian" ]; then
             sudo apt-get install -y wl-clipboard
         else
             ok "wl-clipboard"
+        fi
+
+        # ydotool: compositor-agnostic input injection (required for KDE Wayland)
+        if ! command -v ydotool &>/dev/null; then
+            if [[ "${XDG_CURRENT_DESKTOP,,}" == *"kde"* ]]; then
+                log "KDE Wayland detected — installing ydotool (wtype is not supported on KDE)"
+                sudo apt-get install -y ydotool
+            else
+                warn "ydotool not found — optional but recommended for KDE Wayland users"
+            fi
+        else
+            ok "ydotool"
+        fi
+        # Enable ydotoold user service if ydotool is now available
+        if command -v ydotool &>/dev/null; then
+            if ! systemctl --user is-active --quiet ydotoold 2>/dev/null; then
+                log "Enabling ydotoold user service..."
+                systemctl --user enable --now ydotoold
+            else
+                ok "ydotoold service active"
+            fi
         fi
     fi
 
