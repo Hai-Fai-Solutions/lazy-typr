@@ -34,9 +34,4 @@ jobs:
         run: cog bump --auto
 
       - name: Push bump commit and tag
-        run: |
-          if git describe --exact-match HEAD 2>/dev/null | grep -qE '^v[0-9]'; then
-            git push --follow-tags
-          else
-            echo "No new tag on HEAD — nothing to push"
-          fi
+        run: git push --follow-tags
