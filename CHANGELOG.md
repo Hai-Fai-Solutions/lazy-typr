@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 This file is automatically maintained by [cocogitto](https://github.com/cocogitto/cocogitto).
 
 - - -
+## [v0.2.0](https://github.com/Hai-Fai-Solutions/lazy-typr/compare/650c80baaf61a837822d546e205e86c11a1ff640..v0.2.0) - 2026-03-07
+#### Features
+- add Renovate Bot for automated dependency updates (#7) (#9) - ([650c80b](https://github.com/Hai-Fai-Solutions/lazy-typr/commit/650c80baaf61a837822d546e205e86c11a1ff640)) - Christian Polzer
+
+- - -
+
 ## [v0.1.1](https://github.com/Hai-Fai-Solutions/lazy-typr/compare/d395d2321366efd5052b6fedd1298f0f58b35e1f..v0.1.1) - 2026-03-07
 #### Bug Fixes
 - handle nothing-to-bump gracefully in CI - ([d395d23](https://github.com/Hai-Fai-Solutions/lazy-typr/commit/d395d2321366efd5052b6fedd1298f0f58b35e1f)) - christian polzer
