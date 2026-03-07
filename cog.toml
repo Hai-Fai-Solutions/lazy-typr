@@ -1,9 +1,3 @@
-[changelog]
-path = "CHANGELOG.md"
-template = "remote"
-remote = "github.com"
-repository = "lazy-typr"
-owner = "Hai-Fai-Solutions"
 tag_prefix = "v"
 
 bump_commit_message = "chore(version): {{version}} [skip ci]"
@@ -12,3 +6,10 @@ pre_bump_hooks = [
   "sed -i 's/^version = \"[0-9]*\\.[0-9]*\\.[0-9]*\"/version = \"{{version}}\"/' Cargo.toml",
   "cargo generate-lockfile",
 ]
+
+[changelog]
+path = "CHANGELOG.md"
+template = "remote"
+remote = "github.com"
+repository = "lazy-typr"
+owner = "Hai-Fai-Solutions"
