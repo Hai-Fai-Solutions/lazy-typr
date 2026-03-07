@@ -333,21 +333,19 @@ tests/
 
 | Branch | Purpose |
 |--------|---------|
-| `main` | Stable, tagged releases |
-| `develop` | Integration branch — all PRs target this |
-| `feature/*` | Short-lived feature branches off `develop` |
+| `main` | Stable, tagged releases — all PRs target here |
+| `feature/*` | Short-lived feature branches off `main` |
+| `bugfix/*` | Short-lived bugfix branches off `main` |
 
 ```bash
 # Start a feature
-git checkout develop
+git checkout main
 git checkout -b feature/my-feature
 
-# Merge back
-git checkout develop
-git merge --no-ff feature/my-feature
+# Merge back via PR to main
 ```
 
-Releases are cut from `develop` → `main` via PR, then tagged:
+Releases are tagged on `main` after merging. Cocogitto auto-bumps the version and tag on merge:
 
 ```bash
 git tag -a v0.2.0 -m "v0.2.0"
