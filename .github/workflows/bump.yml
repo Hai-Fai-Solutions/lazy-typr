@@ -28,15 +28,12 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Bump version
-        id: bump
-        run: |
-          if cog bump --auto; then
-            echo "bumped=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "No version bump needed (no feat/fix commits since last tag)"
-            echo "bumped=false" >> "$GITHUB_OUTPUT"
-          fi
+        run: cog bump --auto
 
       - name: Push bump commit and tag
-        if: steps.bump.outputs.bumped == 'true'
-        run: git push --follow-tags
+        run: |
+          if git describe --exact-match HEAD 2>/dev/null | grep -qE '^v[0-9]'; then
+            git push --follow-tags
+          else
+            echo "No new tag on HEAD — nothing to push"
+          fi
