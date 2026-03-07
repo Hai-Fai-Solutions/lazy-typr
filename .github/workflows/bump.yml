@@ -10,6 +10,7 @@ jobs:
   bump:
     name: cog bump --auto
     runs-on: ubuntu-latest
+    if: "github.event_name == 'workflow_dispatch' || !startsWith(github.event.head_commit.message, 'chore(version):')"
 
     steps:
       - uses: actions/checkout@v4
@@ -34,4 +35,4 @@ jobs:
         run: cog bump --auto
 
       - name: Push bump commit and tag
-        run: git push --follow-tags
+        run: git push origin main && git push --tags
