@@ -1,0 +1,7 @@
+#!/bin/sh
+set -e
+
+cargo fmt
+
+# Re-stage any Rust files that cargo fmt modified
+git diff --name-only | grep '\.rs$' | xargs -r git add
