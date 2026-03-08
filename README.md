@@ -353,7 +353,7 @@ src/
 │   ├── mod.rs       # CPAL capture, downmix, resample, VAD/PTT dispatch
 │   └── vad.rs       # Energy-based Voice Activity Detection
 ├── transcriber.rs   # Whisper inference thread
-├── typer.rs         # wtype / xdotool dispatch thread
+├── typer.rs         # ydotool / wtype / xdotool dispatch thread
 └── ptt.rs           # evdev push-to-talk monitor thread
 tests/
 ├── config_integration.rs
