@@ -59,9 +59,9 @@ impl Transcriber {
 
         state
             .full(params, samples)
-            .context("Whisper inference failed")?;
+            .map_err(|e| anyhow::anyhow!("Whisper inference failed: {:?}", e))?;
 
-        let n_segments = state.full_n_segments()?;
+        let n_segments = state.full_n_segments();
         debug!("Whisper produced {} segments", n_segments);
 
         if n_segments == 0 {
@@ -70,10 +70,13 @@ impl Transcriber {
 
         let mut result = String::new();
         for i in 0..n_segments {
-            let seg = state
-                .full_get_segment_text(i)
-                .context("Failed to get segment text")?;
-            let seg = seg.trim();
+            let segment = state
+                .get_segment(i)
+                .ok_or_else(|| anyhow::anyhow!("Failed to get segment {}", i))?;
+            let seg_text = segment
+                .to_str()
+                .map_err(|e| anyhow::anyhow!("Failed to get segment text: {:?}", e))?;
+            let seg = seg_text.trim();
 
             // Filter out common hallucinations / noise markers
             if is_hallucination(seg) {
