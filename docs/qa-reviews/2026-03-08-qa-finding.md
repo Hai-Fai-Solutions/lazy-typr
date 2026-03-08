@@ -1,27 +1,49 @@
-#Issues Found
+# QA Findings
 
-Important
-1. language flag always overwrites config (pre-existing but made more visible)
-main.rs:74 — config.language = args.language is unconditional because --language has default_value = "de". So a user with "language": "fr" in their config.json gets silently overridden to "de" on every run. The new --whisper-task was correctly added as Option<String> (conditional), making the inconsistency more apparent. Same problem exists for silence_ms at main.rs:75.
+## Issue Entities
 
-2. Silent fallback on typos gives no user feedback
-main.rs:83-88 — --whisper-task trnascribe silently runs in transcribe mode with no warning. The plan calls it a "future improvement" but a single warn! call would fix it for free.
+1. `ISSUE-1A`  
+Title: `language` flag always overwrites config  
+Status: `Solved`  
+Details: `language` no longer overwrites config unless `--language` is explicitly provided.
 
-Test Gaps
-3. No tests for Task serde behavior — config.rs tests don't cover:
+2. `ISSUE-1B`  
+Title: `silence_ms` flag always overwrites config  
+Status: `Open`  
+Details: `silence_ms` is still unconditionally merged from CLI default.
 
-Missing whisper_task key → defaults to Transcribe
-"translate" → Task::Translate
-"Transcribe" (capital T) → serde hard error (because rename_all = "lowercase" is case-sensitive), while the CLI silently defaults. This inconsistency is untested and undocumented.
-4. test_serialization_roundtrip (config.rs:185) never sets whisper_task: Task::Translate nor asserts it after roundtrip.
+3. `ISSUE-2`  
+Title: Silent fallback on `--whisper-task` typo  
+Status: `Open`  
+Details: `--whisper-task trnascribe` silently falls back without warning.
 
-5. Integration test ConfigSnapshot (tests/config_integration.rs) doesn't include whisper_task, so changes to that field's serialization won't be caught there.
+4. `ISSUE-3`  
+Title: Missing serde tests for `Task` behavior  
+Status: `Open`  
+Details:
+- missing `whisper_task` key defaults to `Transcribe`
+- `"translate"` maps to `Task::Translate`
+- `"Transcribe"` (capital T) serde failure behavior is asserted and documented
 
-Minor
-6. Task has no Display impl — The startup log at main.rs:120-127 uses an inline if/else instead of match. If a third variant were added, it would silently print "transcribe".
+5. `ISSUE-4`  
+Title: Roundtrip test does not exercise `Task::Translate`  
+Status: `Open`  
+Details: `test_serialization_roundtrip` does not include/assert the non-default task variant.
 
-Recommended Actions (in priority order)
-Fix issue #1 — change language and silence_ms to Option<T> with conditional merges (to match how whisper_task and ptt_key are handled)
-Add serde tests for Task — especially the case-sensitive deserialization trap
-Add warn! for unrecognized --whisper-task values
-Update test_serialization_roundtrip to exercise Task::Translate
+6. `ISSUE-5`  
+Title: Integration snapshot does not include `whisper_task`  
+Status: `Open`  
+Details: `ConfigSnapshot` in integration tests misses this field, so serialization regressions may go unnoticed.
+
+7. `ISSUE-6`  
+Title: `Task` has no `Display` impl  
+Status: `Open`  
+Details: startup log formatting uses inline logic instead of a type-level display mapping.
+
+## Recommended Actions (Updated Priority)
+
+1. Fix `ISSUE-1B`: make `silence_ms` conditional like `language`.
+2. Fix `ISSUE-2`: add warning/error handling for unrecognized `--whisper-task` values.
+3. Fix `ISSUE-3`: add serde tests for `Task` (including case-sensitivity behavior).
+4. Fix `ISSUE-4` and `ISSUE-5`: extend roundtrip and integration snapshot tests to cover `whisper_task`.
+5. Fix `ISSUE-6`: add `Display` for `Task` and use it in startup logging.
