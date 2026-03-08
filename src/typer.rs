@@ -5,6 +5,9 @@ use tracing::{debug, info, warn};
 /// -M presses the modifier, -k sends the key, -m releases the modifier.
 const WTYPE_PASTE_ARGS: &[&str] = &["-M", "ctrl", "-k", "v", "-m", "ctrl"];
 
+/// Arguments for ydotool to send Ctrl+V.
+const YDOTOOL_PASTE_ARGS: &[&str] = &["key", "ctrl+v"];
+
 enum Backend {
     X11,
     Wayland,
@@ -159,8 +162,26 @@ impl Typer {
         }
     }
 
-    fn type_with_clipboard_ydotool(&self, _text: &str) -> Result<()> {
-        anyhow::bail!("not yet implemented")
+    fn type_with_clipboard_ydotool(&self, text: &str) -> Result<()> {
+        let saved = self.get_clipboard();
+
+        self.set_clipboard(text)?;
+        std::thread::sleep(std::time::Duration::from_millis(50));
+
+        let paste_result = std::process::Command::new("ydotool")
+            .args(YDOTOOL_PASTE_ARGS)
+            .status();
+
+        if let Ok(saved_text) = saved {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            let _ = self.set_clipboard(&saved_text);
+        }
+
+        paste_result
+            .context("ydotool key failed")?
+            .success()
+            .then_some(())
+            .ok_or_else(|| anyhow::anyhow!("ydotool key ctrl+v failed"))
     }
 
     fn type_with_clipboard_x11(&self, text: &str) -> Result<()> {
@@ -210,7 +231,7 @@ impl Typer {
 
     fn set_clipboard(&self, text: &str) -> Result<()> {
         // Try wl-copy first on Wayland
-        if matches!(self.backend, Backend::Wayland) {
+        if matches!(self.backend, Backend::Wayland | Backend::Ydotool) {
             let r = std::process::Command::new("wl-copy")
                 .stdin(std::process::Stdio::piped())
                 .spawn();
@@ -297,6 +318,16 @@ mod tests {
     fn test_dry_run_multiline_text() {
         let typer = Typer::new(true);
         assert!(typer.type_text("line one\nline two").is_ok());
+    }
+
+    /// Ensure the clipboard-ydotool fallback uses correct ydotool key syntax.
+    #[test]
+    fn test_ydotool_key_combo_args_are_correct() {
+        assert_eq!(
+            YDOTOOL_PASTE_ARGS,
+            &["key", "ctrl+v"],
+            "ydotool paste args must be 'ydotool key ctrl+v'"
+        );
     }
 
     /// Ensure the clipboard-wayland fallback uses correct wtype key syntax.
