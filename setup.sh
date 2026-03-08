@@ -93,6 +93,26 @@ if [ "$DISTRO" = "arch" ]; then
         else
             ok "wl-clipboard"
         fi
+        # ydotool: compositor-agnostic text injection (required on KDE, recommended elsewhere)
+        desktop_lower="${XDG_CURRENT_DESKTOP,,}"
+        if [[ "$desktop_lower" == *"kde"* ]]; then
+            if ! command -v ydotool &>/dev/null; then
+                log "KDE Plasma detected — installing ydotool (required for text injection)"
+                sudo pacman -S --noconfirm ydotool
+            else
+                ok "ydotool (KDE Wayland)"
+            fi
+        else
+            if ! command -v ydotool &>/dev/null; then
+                warn "ydotool not found — text injection falls back to wtype; install ydotool for compositor-agnostic support"
+            else
+                ok "ydotool (optional, detected)"
+            fi
+        fi
+        if command -v ydotool &>/dev/null; then
+            log "Enabling ydotoold user service..."
+            systemctl --user enable --now ydotoold || warn "Could not enable ydotoold — run: systemctl --user enable --now ydotoold"
+        fi
     fi
 
 elif [ "$DISTRO" = "debian" ]; then
@@ -128,6 +148,26 @@ elif [ "$DISTRO" = "debian" ]; then
             sudo apt-get install -y wl-clipboard
         else
             ok "wl-clipboard"
+        fi
+        # ydotool: compositor-agnostic text injection (required on KDE, recommended elsewhere)
+        desktop_lower="${XDG_CURRENT_DESKTOP,,}"
+        if [[ "$desktop_lower" == *"kde"* ]]; then
+            if ! command -v ydotool &>/dev/null; then
+                log "KDE Plasma detected — installing ydotool (required for text injection)"
+                sudo apt-get install -y ydotool
+            else
+                ok "ydotool (KDE Wayland)"
+            fi
+        else
+            if ! command -v ydotool &>/dev/null; then
+                warn "ydotool not found — text injection falls back to wtype; install ydotool for compositor-agnostic support"
+            else
+                ok "ydotool (optional, detected)"
+            fi
+        fi
+        if command -v ydotool &>/dev/null; then
+            log "Enabling ydotoold user service..."
+            systemctl --user enable --now ydotoold || warn "Could not enable ydotoold — run: systemctl --user enable --now ydotoold"
         fi
     fi
 
