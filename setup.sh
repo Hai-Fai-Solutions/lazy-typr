@@ -4,6 +4,8 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -109,13 +111,22 @@ if [ "$DISTRO" = "arch" ]; then
         if command -v ydotool &>/dev/null; then
             if systemctl --user is-active --quiet ydotoold 2>/dev/null; then
                 ok "ydotoold service active"
-            elif systemctl --user list-unit-files ydotoold.service &>/dev/null 2>&1; then
+            elif systemctl --user list-unit-files --full 2>/dev/null | grep -q "^ydotoold.service"; then
                 log "Enabling ydotoold user service..."
                 systemctl --user enable --now ydotoold
             else
                 warn "ydotoold.service not found — start it manually before using whisper-type:"
                 warn "  ydotoold &"
                 warn "  Or add 'ydotoold' to your desktop autostart"
+                read -rp "  Create a user systemd service from the bundled example? [Y/n]: " CREATE_SVC
+                CREATE_SVC="${CREATE_SVC:-Y}"
+                if [[ "${CREATE_SVC,,}" == "y" ]]; then
+                    mkdir -p "$HOME/.config/systemd/user"
+                    cp "$SCRIPT_DIR/ydotoold.service_user_example" "$HOME/.config/systemd/user/ydotoold.service"
+                    systemctl --user daemon-reload
+                    systemctl --user enable --now ydotoold
+                    ok "ydotoold user service created and started"
+                fi
             fi
         fi
     fi
@@ -170,13 +181,22 @@ elif [ "$DISTRO" = "debian" ]; then
         if command -v ydotool &>/dev/null; then
             if systemctl --user is-active --quiet ydotoold 2>/dev/null; then
                 ok "ydotoold service active"
-            elif systemctl --user list-unit-files ydotoold.service &>/dev/null 2>&1; then
+            elif systemctl --user list-unit-files --full 2>/dev/null | grep -q "^ydotoold.service"; then
                 log "Enabling ydotoold user service..."
                 systemctl --user enable --now ydotoold
             else
                 warn "ydotoold.service not found — start it manually before using whisper-type:"
                 warn "  ydotoold &"
                 warn "  Or add 'ydotoold' to your desktop autostart"
+                read -rp "  Create a user systemd service from the bundled example? [Y/n]: " CREATE_SVC
+                CREATE_SVC="${CREATE_SVC:-Y}"
+                if [[ "${CREATE_SVC,,}" == "y" ]]; then
+                    mkdir -p "$HOME/.config/systemd/user"
+                    cp "$SCRIPT_DIR/ydotoold.service_user_example" "$HOME/.config/systemd/user/ydotoold.service"
+                    systemctl --user daemon-reload
+                    systemctl --user enable --now ydotoold
+                    ok "ydotoold user service created and started"
+                fi
             fi
         fi
     fi

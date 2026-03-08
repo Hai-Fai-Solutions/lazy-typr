@@ -24,7 +24,7 @@ impl Typer {
     /// Stdout and stderr are suppressed; the probe exits quickly via `--version`.
     fn probe_tool(backend: &Backend) -> bool {
         let (cmd, arg) = match backend {
-            Backend::Ydotool => ("ydotool", "--help"),
+            Backend::Ydotool => ("ydotool", "--version"),
             Backend::Wayland => ("wtype", "--version"),
             Backend::X11 => ("xdotool", "version"),
         };
@@ -37,15 +37,67 @@ impl Typer {
             .unwrap_or(false)
     }
 
+    /// Returns `true` if the ydotoold daemon socket is reachable.
+    /// ydotool is useless without the daemon even if the binary is installed.
+    fn probe_ydotoold_daemon() -> bool {
+        if let Ok(runtime_dir) = std::env::var("XDG_RUNTIME_DIR") {
+            let base = std::path::Path::new(&runtime_dir);
+            // Default socket path used by ydotoold out of the box
+            if base.join(".ydotool_socket").exists() {
+                return true;
+            }
+            // Alternative path used by some distro service units
+            if base.join("ydotoold/ydotoold.sock").exists() {
+                return true;
+            }
+        }
+        // System-wide service socket
+        std::path::Path::new("/run/ydotoold/ydotoold.sock").exists()
+    }
+
+    /// Returns `true` when running under KDE Plasma.
+    /// wtype does not work on KDE Plasma Wayland (no wlr-virtual-keyboard support),
+    /// so we need ydotool there instead.
+    fn is_kde_plasma() -> bool {
+        std::env::var("XDG_CURRENT_DESKTOP")
+            .map(|v| v.to_ascii_uppercase().contains("KDE"))
+            .unwrap_or(false)
+            || std::env::var("KDE_FULL_SESSION").is_ok()
+    }
+
     pub fn new(dry_run: bool) -> Self {
-        // ydotool is probed first: it works on any compositor (including KDE Wayland)
-        // and on X11, so it takes priority when available.
-        let backend = if Self::probe_tool(&Backend::Ydotool) {
-            info!("ydotool detected — using ydotool (compositor-agnostic)");
-            Backend::Ydotool
-        } else if std::env::var("WAYLAND_DISPLAY").is_ok() {
-            info!("Wayland display detected — using wtype");
-            Backend::Wayland
+        let on_wayland = std::env::var("WAYLAND_DISPLAY").is_ok();
+
+        let backend = if on_wayland {
+            let kde = Self::is_kde_plasma();
+            let ydotool_ready = Self::probe_ydotoold_daemon();
+
+            if kde {
+                // KDE Plasma Wayland: wtype has no wlr-virtual-keyboard support.
+                // Require the ydotoold daemon to be running; warn loudly if it isn't.
+                if ydotool_ready {
+                    info!("KDE Plasma Wayland detected — using ydotool (ydotoold daemon found)");
+                    Backend::Ydotool
+                } else {
+                    warn!(
+                        "KDE Plasma Wayland detected but ydotoold daemon not found. \
+                         wtype will not work on KDE. Start ydotoold or run: \
+                         systemctl --user enable --now ydotoold"
+                    );
+                    Backend::Wayland
+                }
+            } else if Self::probe_tool(&Backend::Wayland) {
+                // Non-KDE Wayland (GNOME, Sway, etc.): wtype works fine.
+                info!("Wayland display detected — using wtype");
+                Backend::Wayland
+            } else if ydotool_ready {
+                // wtype not installed but ydotoold is running — fall back to ydotool.
+                info!("Wayland display detected, wtype unavailable — using ydotool");
+                Backend::Ydotool
+            } else {
+                info!("Wayland display detected — using wtype");
+                Backend::Wayland
+            }
         } else {
             Backend::X11
         };
@@ -60,10 +112,7 @@ impl Typer {
                     Backend::Wayland => "wtype",
                     Backend::X11 => "xdotool",
                 };
-                warn!(
-                    "{} not found on PATH; direct typing disabled, clipboard paste will be used",
-                    tool
-                );
+                warn!("{} not found on PATH; clipboard paste will not work", tool);
             }
             available
         };
@@ -77,7 +126,8 @@ impl Typer {
 
     /// Type the given text into the currently focused window.
     ///
-    /// On ydotool: uses ydotool type, falls back to wl-clipboard + ydotool key paste.
+    /// On ydotool: sets clipboard via wl-copy/arboard, then sends ctrl+v via ydotool key.
+    ///             ydotool type is skipped entirely to avoid encoding issues with special chars.
     /// On Wayland: uses wtype, falls back to wl-clipboard + wtype key paste.
     /// On X11:     uses xdotool, falls back to xclip/xsel + ctrl+v paste.
     pub fn type_text(&self, text: &str) -> Result<()> {
@@ -93,12 +143,8 @@ impl Typer {
 
         match self.backend {
             Backend::Ydotool => {
-                if self.tool_available && self.type_with_ydotool(&text_with_space).is_ok() {
-                    return Ok(());
-                }
-                if self.tool_available {
-                    info!("ydotool failed, falling back to clipboard paste");
-                }
+                // Always use clipboard + ctrl+v; ydotool type has encoding issues with
+                // special/non-ASCII characters so we skip it entirely.
                 self.type_with_clipboard_ydotool(&text_with_space)
             }
             Backend::X11 => {
@@ -152,30 +198,16 @@ impl Typer {
         }
     }
 
-    fn type_with_ydotool(&self, text: &str) -> Result<()> {
-        // --key-delay=0 / --key-hold=0: no inter-key delay (matches xdotool/wtype behaviour)
-        let output = std::process::Command::new("ydotool")
-            .args(["type", "--key-delay=0", "--key-hold=0", "--", text])
-            .output()
-            .context("ydotool not found. Install with: sudo pacman -S ydotool")?;
-
-        if output.status.success() {
-            Ok(())
-        } else {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            anyhow::bail!("ydotool failed: {}", stderr)
-        }
-    }
-
     fn type_with_clipboard_ydotool(&self, text: &str) -> Result<()> {
         let saved = self.get_clipboard();
 
         self.set_clipboard(text)?;
         std::thread::sleep(std::time::Duration::from_millis(50));
 
-        // ydotool key accepts X11-style key names; ctrl+v works on both X11 and Wayland
+        // ydotool key uses Linux input keycode notation: "KEYCODE:VALUE"
+        // 29 = KEY_LEFTCTRL, 47 = KEY_V; value 1 = press, 0 = release
         let paste_result = std::process::Command::new("ydotool")
-            .args(["key", "ctrl+v"])
+            .args(["key", "29:1", "47:1", "47:0", "29:0"])
             .status();
 
         if let Ok(saved_text) = saved {

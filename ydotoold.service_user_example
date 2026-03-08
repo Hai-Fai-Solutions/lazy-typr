@@ -1,0 +1,12 @@
+[Unit]
+Description=ydotoold — ydotool input automation daemon
+Documentation=man:ydotoold(8)
+After=graphical-session.target
+
+[Service]
+ExecStart=/usr/bin/ydotoold
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target
