@@ -53,6 +53,10 @@ struct Args {
     #[arg(long)]
     list_gpu_devices: bool,
 
+    /// WebRTC VAD aggressiveness level 0-3 (higher = more noise rejection)
+    #[arg(long, value_name = "0-3")]
+    webrtc_vad_aggressiveness: Option<u8>,
+
     /// Print transcribed text to stdout instead of typing it
     #[arg(long)]
     dry_run: bool,
@@ -114,6 +118,16 @@ fn main() -> Result<()> {
     if let Some(key) = args.ptt_key {
         config.ptt_key = Some(key);
     }
+    if let Some(level) = args.webrtc_vad_aggressiveness {
+        if level > 3 {
+            eprintln!(
+                "Error: webrtc_vad_aggressiveness must be 0-3, got {}",
+                level
+            );
+            std::process::exit(1);
+        }
+        config.webrtc_vad_aggressiveness = level;
+    }
 
     // Initialize logging with the merged level
     // RUST_LOG env var still overrides everything (via from_default_env)
@@ -159,6 +173,16 @@ fn main() -> Result<()> {
     } else {
         info!("GPU inference: disabled (CPU)");
     }
+    info!(
+        "WebRTC VAD aggressiveness: {} ({})",
+        config.webrtc_vad_aggressiveness,
+        match config.webrtc_vad_aggressiveness {
+            0 => "quality",
+            1 => "low-bitrate",
+            2 => "aggressive",
+            _ => "very-aggressive",
+        }
+    );
 
     // Shared running flag
     let running = Arc::new(AtomicBool::new(true));

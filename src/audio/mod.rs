@@ -13,6 +13,9 @@ use crate::config::Config;
 mod vad;
 use vad::{Vad, VadEvent};
 
+mod webrtc_vad;
+pub use webrtc_vad::WebrtcVadFilter;
+
 const WHISPER_SAMPLE_RATE: u32 = 16000;
 
 pub struct AudioCapture {
@@ -84,6 +87,7 @@ impl AudioCapture {
                 let audio_tx_inner = audio_tx.clone();
                 let ptt = ptt_active.clone();
                 let mut ptt_was_active = false;
+                let mut wrtc = WebrtcVadFilter::new(vad_cfg.webrtc_vad_aggressiveness);
 
                 self.device.build_input_stream(
                     &stream_config,
@@ -94,6 +98,7 @@ impl AudioCapture {
                             &resampled,
                             &segment_w,
                             &vad_clone,
+                            Some(&mut wrtc),
                             ptt.as_ref(),
                             &mut ptt_was_active,
                             &audio_tx_inner,
@@ -110,6 +115,7 @@ impl AudioCapture {
                 let audio_tx_inner = audio_tx.clone();
                 let ptt = ptt_active.clone();
                 let mut ptt_was_active = false;
+                let mut wrtc2 = WebrtcVadFilter::new(vad_cfg.webrtc_vad_aggressiveness);
 
                 self.device.build_input_stream(
                     &stream_config,
@@ -121,6 +127,7 @@ impl AudioCapture {
                             &resampled,
                             &segment_w,
                             &vad_clone,
+                            Some(&mut wrtc2),
                             ptt.as_ref(),
                             &mut ptt_was_active,
                             &audio_tx_inner,
@@ -186,10 +193,12 @@ fn prepare_samples(
 }
 
 /// Route audio to VAD or PTT handler based on mode.
+#[allow(clippy::too_many_arguments)]
 fn dispatch(
     resampled: &[f32],
     segment: &Arc<Mutex<Vec<f32>>>,
     vad: &Arc<Mutex<Vad>>,
+    webrtc_filter: Option<&mut WebrtcVadFilter>,
     ptt_active: Option<&Arc<AtomicBool>>,
     ptt_was_active: &mut bool,
     tx: &Sender<Vec<f32>>,
@@ -198,7 +207,7 @@ fn dispatch(
     if let Some(ptt) = ptt_active {
         handle_audio_ptt(resampled, segment, ptt, ptt_was_active, tx, max_samples);
     } else {
-        handle_audio_vad(resampled, segment, vad, tx, max_samples);
+        handle_audio_vad(resampled, segment, vad, webrtc_filter, tx, max_samples);
     }
 }
 
@@ -207,6 +216,7 @@ fn handle_audio_vad(
     resampled: &[f32],
     segment: &Arc<Mutex<Vec<f32>>>,
     vad: &Arc<Mutex<Vad>>,
+    webrtc_filter: Option<&mut WebrtcVadFilter>,
     tx: &Sender<Vec<f32>>,
     max_samples: usize,
 ) {
@@ -216,10 +226,15 @@ fn handle_audio_vad(
     match event {
         VadEvent::SpeechStart | VadEvent::None => {
             if vad.lock().unwrap().is_speaking {
-                seg.extend_from_slice(resampled);
-                if seg.len() > max_samples {
-                    let drain_to = seg.len() - max_samples;
-                    seg.drain(..drain_to);
+                let passes_webrtc = webrtc_filter
+                    .map(|f| f.is_speech(resampled))
+                    .unwrap_or(true);
+                if passes_webrtc {
+                    seg.extend_from_slice(resampled);
+                    if seg.len() > max_samples {
+                        let drain_to = seg.len() - max_samples;
+                        seg.drain(..drain_to);
+                    }
                 }
             }
         }

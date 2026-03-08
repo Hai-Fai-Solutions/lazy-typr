@@ -151,3 +151,26 @@ fn continuous_silence_produces_no_segments() {
         "silence should not produce segments"
     );
 }
+
+// ── WebRTC VAD two-stage gate ─────────────────────────────────────────────
+
+#[test]
+fn webrtc_vad_rejects_silence() {
+    use whisper_type::audio::WebrtcVadFilter;
+    let mut filter = WebrtcVadFilter::new(2);
+    let silence = vec![0.0f32; 16000]; // 1 second
+    assert!(
+        !filter.is_speech(&silence),
+        "WebRTC VAD must not classify silence as speech"
+    );
+}
+
+#[test]
+fn webrtc_vad_accepts_valid_aggressiveness_range() {
+    use whisper_type::audio::WebrtcVadFilter;
+    for level in 0u8..=3 {
+        let mut filter = WebrtcVadFilter::new(level);
+        let silence = vec![0.0f32; 160];
+        let _ = filter.is_speech(&silence);
+    }
+}

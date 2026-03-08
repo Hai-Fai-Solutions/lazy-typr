@@ -15,6 +15,7 @@ path = "src/lib.rs"
 [dependencies]
 # Audio capture
 cpal = "0.15"
+webrtc-vad = "0.4"
 
 # Whisper bindings
 whisper-rs = { version = "0.15", features = ["vulkan"] }
