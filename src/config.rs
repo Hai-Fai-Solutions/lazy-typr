@@ -37,6 +37,10 @@ pub struct Config {
     #[serde(default)]
     pub use_gpu: bool,
 
+    /// Vulkan GPU device index. 0 = first device. Only used when use_gpu = true.
+    #[serde(default)]
+    pub gpu_device: u32,
+
     /// Print to stdout instead of typing
     #[serde(skip)]
     pub dry_run: bool,
@@ -64,6 +68,7 @@ impl Default for Config {
             log_level: default_log_level(),
             ptt_key: None,
             use_gpu: false,
+            gpu_device: 0,
             dry_run: false,
         }
     }
@@ -171,6 +176,36 @@ mod tests {
     #[test]
     fn test_default_use_gpu_is_false() {
         assert!(!Config::default().use_gpu);
+    }
+
+    #[test]
+    fn test_default_gpu_device_is_zero() {
+        assert_eq!(Config::default().gpu_device, 0);
+    }
+
+    #[test]
+    fn test_gpu_device_round_trips_through_json() {
+        let cfg = Config {
+            gpu_device: 2,
+            ..Config::default()
+        };
+        let json = serde_json::to_string(&cfg).unwrap();
+        let restored: Config = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored.gpu_device, 2);
+    }
+
+    #[test]
+    fn test_gpu_device_absent_in_legacy_json_defaults_to_zero() {
+        let json = r#"{
+            "model_path": "/tmp/model.bin",
+            "language": "de",
+            "silence_threshold_ms": 800,
+            "min_speech_ms": 300,
+            "max_buffer_secs": 30.0,
+            "vad_threshold": 0.01
+        }"#;
+        let cfg: Config = serde_json::from_str(json).unwrap();
+        assert_eq!(cfg.gpu_device, 0);
     }
 
     #[test]
