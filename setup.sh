@@ -94,7 +94,8 @@ if [ "$DISTRO" = "arch" ]; then
             ok "wl-clipboard"
         fi
         # ydotool: compositor-agnostic text injection (required on KDE, recommended elsewhere)
-        desktop_lower="${XDG_CURRENT_DESKTOP,,}"
+        desktop_lower="${XDG_CURRENT_DESKTOP:-}"
+        desktop_lower="${desktop_lower,,}"
         if [[ "$desktop_lower" == *"kde"* ]]; then
             if ! command -v ydotool &>/dev/null; then
                 log "KDE Plasma detected — installing ydotool (required for text injection)"
@@ -150,7 +151,8 @@ elif [ "$DISTRO" = "debian" ]; then
             ok "wl-clipboard"
         fi
         # ydotool: compositor-agnostic text injection (required on KDE, recommended elsewhere)
-        desktop_lower="${XDG_CURRENT_DESKTOP,,}"
+        desktop_lower="${XDG_CURRENT_DESKTOP:-}"
+        desktop_lower="${desktop_lower,,}"
         if [[ "$desktop_lower" == *"kde"* ]]; then
             if ! command -v ydotool &>/dev/null; then
                 log "KDE Plasma detected — installing ydotool (required for text injection)"
