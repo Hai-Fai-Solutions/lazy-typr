@@ -4,6 +4,8 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -67,7 +69,7 @@ if [ "$DISTRO" = "arch" ]; then
 
     if [ ${#MISSING_PKGS[@]} -gt 0 ]; then
         log "Installing missing packages: ${MISSING_PKGS[*]}"
-        sudo pacman -S --noconfirm "${MISSING_PKGS[@]}"
+        sudo pacman -S --needed --noconfirm "${MISSING_PKGS[@]}"
     else
         ok "All system dependencies present"
     fi
@@ -75,23 +77,57 @@ if [ "$DISTRO" = "arch" ]; then
     # Optional: xclip for clipboard fallback (X11)
     if ! command -v xclip &>/dev/null && ! command -v xsel &>/dev/null; then
         warn "Neither xclip nor xsel found — installing xclip for clipboard fallback"
-        sudo pacman -S --noconfirm xclip
+        sudo pacman -S --needed --noconfirm xclip
     fi
 
-    # Optional: wtype for Wayland text injection
+    # Optional: wtype for Wayland text injection (wlroots compositors: Sway, Hyprland, etc.)
     if [ "$XDG_SESSION_TYPE" = "wayland" ] || [ -n "${WAYLAND_DISPLAY:-}" ]; then
         if ! command -v wtype &>/dev/null; then
             log "Wayland session detected — installing wtype for text injection"
-            sudo pacman -S --noconfirm wtype
+            sudo pacman -S --needed --noconfirm wtype
         else
             ok "wtype (Wayland)"
         fi
         # wl-copy for Wayland clipboard fallback
         if ! command -v wl-copy &>/dev/null; then
             log "Installing wl-clipboard for Wayland clipboard fallback"
-            sudo pacman -S --noconfirm wl-clipboard
+            sudo pacman -S --needed --noconfirm wl-clipboard
         else
             ok "wl-clipboard"
+        fi
+
+        # ydotool: compositor-agnostic input injection (required for KDE Wayland)
+        if ! command -v ydotool &>/dev/null; then
+            if [[ "${XDG_CURRENT_DESKTOP,,}" == *"kde"* ]]; then
+                log "KDE Wayland detected — installing ydotool (wtype is not supported on KDE)"
+                sudo pacman -S --needed --noconfirm ydotool
+            else
+                warn "ydotool not found — optional but recommended for KDE Wayland users"
+            fi
+        else
+            ok "ydotool"
+        fi
+        # Enable ydotoold user service if ydotool is now available
+        if command -v ydotool &>/dev/null; then
+            if systemctl --user is-active --quiet ydotoold 2>/dev/null; then
+                ok "ydotoold service active"
+            elif systemctl --user list-unit-files --full 2>/dev/null | grep -q "^ydotoold.service"; then
+                log "Enabling ydotoold user service..."
+                systemctl --user enable --now ydotoold
+            else
+                warn "ydotoold.service not found — start it manually before using whisper-type:"
+                warn "  ydotoold &"
+                warn "  Or add 'ydotoold' to your desktop autostart"
+                read -rp "  Create a user systemd service from the bundled example? [Y/n]: " CREATE_SVC
+                CREATE_SVC="${CREATE_SVC:-Y}"
+                if [[ "${CREATE_SVC,,}" == "y" ]]; then
+                    mkdir -p "$HOME/.config/systemd/user"
+                    cp "$SCRIPT_DIR/ydotoold.service_user_example" "$HOME/.config/systemd/user/ydotoold.service"
+                    systemctl --user daemon-reload
+                    systemctl --user enable --now ydotoold
+                    ok "ydotoold user service created and started"
+                fi
+            fi
         fi
     fi
 
@@ -115,7 +151,7 @@ elif [ "$DISTRO" = "debian" ]; then
         sudo apt-get install -y xclip
     fi
 
-    # Optional: wtype + wl-clipboard for Wayland
+    # Optional: wtype + wl-clipboard for Wayland (wlroots compositors)
     if [ "$XDG_SESSION_TYPE" = "wayland" ] || [ -n "${WAYLAND_DISPLAY:-}" ]; then
         if ! command -v wtype &>/dev/null; then
             log "Wayland session detected — installing wtype for text injection"
@@ -128,6 +164,40 @@ elif [ "$DISTRO" = "debian" ]; then
             sudo apt-get install -y wl-clipboard
         else
             ok "wl-clipboard"
+        fi
+
+        # ydotool: compositor-agnostic input injection (required for KDE Wayland)
+        if ! command -v ydotool &>/dev/null; then
+            if [[ "${XDG_CURRENT_DESKTOP,,}" == *"kde"* ]]; then
+                log "KDE Wayland detected — installing ydotool (wtype is not supported on KDE)"
+                sudo apt-get install -y ydotool
+            else
+                warn "ydotool not found — optional but recommended for KDE Wayland users"
+            fi
+        else
+            ok "ydotool"
+        fi
+        # Enable ydotoold user service if ydotool is now available
+        if command -v ydotool &>/dev/null; then
+            if systemctl --user is-active --quiet ydotoold 2>/dev/null; then
+                ok "ydotoold service active"
+            elif systemctl --user list-unit-files --full 2>/dev/null | grep -q "^ydotoold.service"; then
+                log "Enabling ydotoold user service..."
+                systemctl --user enable --now ydotoold
+            else
+                warn "ydotoold.service not found — start it manually before using whisper-type:"
+                warn "  ydotoold &"
+                warn "  Or add 'ydotoold' to your desktop autostart"
+                read -rp "  Create a user systemd service from the bundled example? [Y/n]: " CREATE_SVC
+                CREATE_SVC="${CREATE_SVC:-Y}"
+                if [[ "${CREATE_SVC,,}" == "y" ]]; then
+                    mkdir -p "$HOME/.config/systemd/user"
+                    cp "$SCRIPT_DIR/ydotoold.service_user_example" "$HOME/.config/systemd/user/ydotoold.service"
+                    systemctl --user daemon-reload
+                    systemctl --user enable --now ydotoold
+                    ok "ydotoold user service created and started"
+                fi
+            fi
         fi
     fi
 
@@ -186,6 +256,51 @@ else
     ok "Model downloaded: $MODEL_PATH"
 fi
 
+# --- GPU acceleration (optional) ---
+GPU_FEATURE=""
+USE_GPU_CFG="false"
+
+detect_gpu_vendor() {
+    if lspci 2>/dev/null | grep -qi "nvidia"; then
+        echo "nvidia"
+    elif lspci 2>/dev/null | grep -qi "amd\|radeon"; then
+        echo "amd"
+    else
+        echo "none"
+    fi
+}
+
+GPU_VENDOR=$(detect_gpu_vendor)
+
+if [ "$GPU_VENDOR" != "none" ]; then
+    echo ""
+    echo "GPU detected (${GPU_VENDOR}). Enable GPU acceleration? (faster inference)"
+    read -rp "Use GPU? [y/N]: " USE_GPU_ANSWER
+    if [[ "${USE_GPU_ANSWER,,}" == "y" ]]; then
+        USE_GPU_CFG="true"
+        if [ "$GPU_VENDOR" = "nvidia" ]; then
+            GPU_FEATURE="cuda"
+            if [ "$DISTRO" = "arch" ]; then
+                log "Installing CUDA toolkit..."
+                sudo pacman -S --needed --noconfirm cuda vulkan-headers
+            elif [ "$DISTRO" = "debian" ]; then
+                log "Installing CUDA toolkit..."
+                sudo apt-get install -y nvidia-cuda-toolkit libvulkan-dev
+            fi
+        elif [ "$GPU_VENDOR" = "amd" ]; then
+            GPU_FEATURE="vulkan"
+            if [ "$DISTRO" = "arch" ]; then
+                log "Installing Vulkan support for AMD..."
+                sudo pacman -S --needed --noconfirm vulkan-headers vulkan-icd-loader vulkan-radeon
+            elif [ "$DISTRO" = "debian" ]; then
+                log "Installing Vulkan support for AMD..."
+                sudo apt-get install -y libvulkan-dev mesa-vulkan-drivers
+            fi
+        fi
+        ok "GPU feature: ${GPU_FEATURE}"
+    fi
+fi
+
 # Write config
 CONFIG_DIR="$HOME/.config/whisper-type"
 mkdir -p "$CONFIG_DIR"
@@ -197,15 +312,22 @@ cat > "$CONFIG_DIR/config.json" << EOF
   "silence_threshold_ms": 800,
   "min_speech_ms": 300,
   "max_buffer_secs": 30.0,
-  "vad_threshold": 0.01
+  "vad_threshold": 0.01,
+  "use_gpu": $USE_GPU_CFG,
+  "gpu_device": null
 }
 EOF
 ok "Config written to $CONFIG_DIR/config.json"
 
 # --- Build ---
 echo ""
-log "Building whisper-type (this may take a few minutes the first time)..."
-cargo build --release
+if [ -n "$GPU_FEATURE" ]; then
+    log "Building whisper-type with GPU support (--features ${GPU_FEATURE}) — this may take several minutes..."
+    cargo build --release --features "$GPU_FEATURE"
+else
+    log "Building whisper-type (CPU only) — this may take a few minutes the first time..."
+    cargo build --release
+fi
 
 BINARY="./target/release/whisper-type"
 if [ -f "$BINARY" ]; then
@@ -238,6 +360,7 @@ echo "  whisper-type                   # Start with saved config"
 echo "  whisper-type --list-devices    # Show audio devices"
 echo "  whisper-type --language en     # Transcribe English"
 echo "  whisper-type --dry-run         # Print text instead of typing"
+echo "  whisper-type --gpu             # Enable GPU acceleration"
 echo "  whisper-type --help            # All options"
 echo ""
 echo "While running: speak naturally, pause to commit. Ctrl+C to stop."

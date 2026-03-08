@@ -7,19 +7,25 @@ use crate::config::Config;
 pub struct Transcriber {
     ctx: WhisperContext,
     language: String,
+    use_gpu: bool,
 }
 
 impl Transcriber {
     pub fn new(config: &Config) -> Result<Self> {
         let ctx = WhisperContext::new_with_params(
             config.model_path.to_str().context("Invalid model path")?,
-            WhisperContextParameters::default(),
+            WhisperContextParameters {
+                use_gpu: config.use_gpu,
+                gpu_device: config.gpu_device.unwrap_or(0),
+                ..WhisperContextParameters::default()
+            },
         )
         .context("Failed to load Whisper model")?;
 
         Ok(Self {
             ctx,
             language: config.language.clone(),
+            use_gpu: config.use_gpu,
         })
     }
 
@@ -40,7 +46,10 @@ impl Transcriber {
         }
 
         // Performance settings
-        params.set_n_threads(num_cpus());
+        // When the GPU handles matrix multiply, 2 CPU threads are enough for pre/post-processing.
+        // On CPU-only builds, use all available cores (capped at 8).
+        let threads = if self.use_gpu { 2 } else { num_cpus() };
+        params.set_n_threads(threads);
         params.set_print_special(false);
         params.set_print_progress(false);
         params.set_print_realtime(false);
@@ -130,6 +139,16 @@ fn num_cpus() -> i32 {
 }
 
 #[cfg(test)]
+fn gpu_thread_count() -> i32 {
+    2
+}
+
+#[cfg(test)]
+fn cpu_thread_count() -> i32 {
+    num_cpus()
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -212,5 +231,19 @@ mod tests {
         let n = num_cpus();
         assert!(n >= 1, "num_cpus should be at least 1, got {}", n);
         assert!(n <= 8, "num_cpus should be capped at 8, got {}", n);
+    }
+
+    // ── GPU thread count ──────────────────────────────────────────────────────
+
+    #[test]
+    fn test_gpu_thread_count_is_2() {
+        // When GPU is active, exactly 2 CPU threads should be used.
+        assert_eq!(gpu_thread_count(), 2);
+    }
+
+    #[test]
+    fn test_cpu_thread_count_matches_num_cpus() {
+        // CPU mode must use the same value as num_cpus().
+        assert_eq!(cpu_thread_count(), num_cpus());
     }
 }

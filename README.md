@@ -11,11 +11,12 @@ Real-time speech-to-text for Linux — transcribes your speech locally with Open
 
 - 🎙️ **Real-time recording** via CPAL (ALSA/PulseAudio/Pipewire)
 - 🧠 **Local AI** via Whisper (ggml, no internet required)
-- ⌨️ **Automatic typing** into any focused text field (Wayland: `wtype`, X11: `xdotool`)
+- ⌨️ **Automatic typing** into any focused text field (`ydotool` for KDE/any compositor, `wtype` for wlroots Wayland, `xdotool` for X11)
 - 🔇 **Voice Activity Detection** — only sends audio when you are actually speaking
 - 🎯 **Push-to-Talk** — optional: hold a key to record (bypasses VAD)
 - 🌍 **Multilingual** — German, English, and all other Whisper languages
 - ⚡ **Multi-threaded** — audio, VAD, Whisper, and typer run in parallel
+- 🚀 **GPU acceleration** — optional NVIDIA (CUDA), AMD (ROCm/hipBLAS), or cross-vendor (Vulkan)
 - 🖥️ **Wayland & X11** — automatically detects the display environment
 
 ---
@@ -44,6 +45,9 @@ whisper-type
 sudo pacman -S xdotool alsa-lib pkgconf base-devel xclip
 # Wayland (Hyprland, Sway, etc.):
 sudo pacman -S wtype wl-clipboard
+# KDE Wayland (or any compositor — ydotool works everywhere):
+sudo pacman -S ydotool
+systemctl --user enable --now ydotoold
 ```
 
 **Debian/Ubuntu:**
@@ -51,6 +55,9 @@ sudo pacman -S wtype wl-clipboard
 sudo apt install xdotool libasound2-dev pkg-config build-essential xclip
 # Wayland:
 sudo apt install wtype wl-clipboard
+# KDE Wayland (or any compositor):
+sudo apt install ydotool
+systemctl --user enable --now ydotoold
 ```
 
 ### Download Whisper Model
@@ -75,6 +82,29 @@ cargo build --release
 cp target/release/whisper-type ~/.local/bin/
 ```
 
+#### GPU-accelerated builds
+
+The binary must be compiled with the appropriate feature flag for your GPU:
+
+| GPU | Feature flag | Build command |
+|-----|---|---|
+| NVIDIA | `cuda` | `cargo build --release --features cuda` |
+| AMD (ROCm) | `hipblas` | `cargo build --release --features hipblas` |
+| NVIDIA or AMD (Vulkan) | `vulkan` | `cargo build --release --features vulkan` |
+
+Build-time requirements:
+
+- **NVIDIA/CUDA** — CUDA Toolkit >= 12 (`nvcc` on `$PATH`)
+  - Arch: `sudo pacman -S cuda`
+  - Debian/Ubuntu: `sudo apt install nvidia-cuda-toolkit`
+- **AMD/ROCm (hipblas)** — ROCm >= 5.x (`hipcc` on `$PATH`)
+- **Vulkan** — Vulkan ICD + headers (`vulkan-headers` is required for compilation)
+  - Arch (AMD): `sudo pacman -S vulkan-headers vulkan-icd-loader vulkan-radeon`
+  - Arch (NVIDIA): `sudo pacman -S vulkan-headers vulkan-nvidia`
+  - Debian/Ubuntu: `sudo apt install libvulkan-dev mesa-vulkan-drivers`
+
+The resulting binary only needs the GPU **runtime** (driver + shared libs) on end-user machines — no SDK required.
+
 ---
 
 ## Usage
@@ -92,6 +122,9 @@ OPTIONS:
         --dry-run             Print text to stdout instead of typing
         --ptt-key <KEY>       Push-to-Talk key (e.g. KEY_SPACE, KEY_CAPSLOCK, KEY_F1)
         --log-level <LEVEL>   Log verbosity (error, warn, info, debug, trace)
+        --gpu                 Enable GPU acceleration (binary must include a GPU feature)
+        --no-gpu              Disable GPU acceleration (overrides config file)
+        --gpu-device <INDEX>  GPU device index [default: 0]
     -h, --help                Show help
 ```
 
@@ -123,6 +156,9 @@ whisper-type --log-level debug
 # Show errors only
 whisper-type --log-level warn
 
+# Force CPU mode even when config has use_gpu: true
+whisper-type --no-gpu
+
 # Push-to-Talk: hold spacebar to record
 whisper-type --ptt-key KEY_SPACE
 
@@ -149,7 +185,9 @@ Stored at `~/.config/whisper-type/config.json`:
   "max_buffer_secs": 30.0,
   "vad_threshold": 0.01,
   "log_level": "info",
-  "ptt_key": null
+  "ptt_key": null,
+  "use_gpu": false,
+  "gpu_device": null
 }
 ```
 
@@ -161,6 +199,8 @@ Stored at `~/.config/whisper-type/config.json`:
 | `max_buffer_secs` | Maximum recording duration per segment | `30.0` |
 | `log_level` | Log verbosity: `error`, `warn`, `info`, `debug`, `trace` | `"info"` |
 | `ptt_key` | Push-to-Talk key (e.g. `"KEY_SPACE"`). `null` = VAD mode | `null` |
+| `use_gpu` | Enable GPU inference (binary must be built with a GPU feature flag) | `false` |
+| `gpu_device` | GPU device index; `null` = let whisper.cpp choose (device 0) | `null` |
 
 **Log level priority** (lowest to highest): `config.json` → `--log-level` flag → `RUST_LOG` environment variable
 
@@ -222,8 +262,34 @@ pactl list sources short
 whisper-type --list-devices
 ```
 
-**Text is not typed (Wayland)**
-`whisper-type` detects Wayland automatically and uses `wtype`. Make sure `wtype` is installed:
+**Text is not typed (KDE Wayland)**
+`wtype` does not work on KDE Plasma because KDE does not implement the `zwlr_virtual_keyboard_v1`
+protocol. Install `ydotool` instead — it writes via `/dev/uinput` and works on any compositor:
+```bash
+# Arch:
+sudo pacman -S ydotool
+systemctl --user enable --now ydotoold
+# Debian/Ubuntu:
+sudo apt install ydotool
+systemctl --user enable --now ydotoold
+```
+`whisper-type` auto-detects `ydotool` on startup and prefers it over `wtype`/`xdotool`.
+
+**`ydotool: Cannot connect to ydotoold`**
+The `ydotoold` user daemon is not running. If your package ships a systemd unit:
+```bash
+systemctl --user enable --now ydotoold
+systemctl --user status ydotoold
+```
+If `ydotoold.service` does not exist (some Arch package versions):
+```bash
+# Start manually for the current session:
+ydotoold &
+# Or add to KDE autostart / ~/.config/autostart/ydotoold.desktop
+```
+
+**Text is not typed (wlroots Wayland — Sway, Hyprland, etc.)**
+`whisper-type` uses `wtype` on wlroots compositors. Make sure it is installed:
 ```bash
 # Arch:
 sudo pacman -S wtype
@@ -252,6 +318,38 @@ The user is not in the `input` group:
 ```bash
 sudo usermod -aG input $USER
 # Log out and back in, then try again
+```
+
+**GPU not used even with `--gpu`**
+
+The binary must be compiled with the matching feature flag — `--gpu` alone is not sufficient if
+the binary was built without GPU support:
+
+```bash
+# Rebuild with CUDA support (NVIDIA):
+cargo build --release --features cuda
+
+# Rebuild with Vulkan support (AMD):
+cargo build --release --features vulkan
+
+# Rebuild with ROCm/HIP support (AMD):
+cargo build --release --features hipblas
+```
+
+Verify it is working:
+```bash
+whisper-type --gpu --dry-run --log-level debug
+# Should print: GPU acceleration: enabled (device 0)
+```
+
+**GPU enabled via config but want to test on CPU**
+
+If `config.json` has `"use_gpu": true` (set by setup.sh), the binary uses the GPU even without
+`--gpu`. Override it for a single run with `--no-gpu`:
+
+```bash
+whisper-type --no-gpu --dry-run
+# Should print: GPU acceleration: disabled (CPU only)
 ```
 
 ---

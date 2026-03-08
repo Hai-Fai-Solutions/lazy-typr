@@ -48,6 +48,18 @@ struct Args {
     /// Log level (error, warn, info, debug, trace)
     #[arg(long)]
     log_level: Option<String>,
+
+    /// Enable GPU acceleration (binary must be built with --features cuda/hipblas/vulkan)
+    #[arg(long)]
+    gpu: bool,
+
+    /// Disable GPU acceleration (overrides config file)
+    #[arg(long)]
+    no_gpu: bool,
+
+    /// GPU device index to use [default: 0]
+    #[arg(long)]
+    gpu_device: Option<i32>,
 }
 
 fn main() -> Result<()> {
@@ -75,6 +87,15 @@ fn main() -> Result<()> {
     }
     if let Some(key) = args.ptt_key {
         config.ptt_key = Some(key);
+    }
+    if args.gpu {
+        config.use_gpu = true;
+    }
+    if args.no_gpu {
+        config.use_gpu = false;
+    }
+    if let Some(device) = args.gpu_device {
+        config.gpu_device = Some(device);
     }
 
     // Initialize logging with the merged level
@@ -107,6 +128,14 @@ fn main() -> Result<()> {
     info!("whisper-type starting...");
     info!("Model: {}", config.model_path.display());
     info!("Language: {}", config.language);
+    if config.use_gpu {
+        info!(
+            "GPU acceleration: enabled (device {})",
+            config.gpu_device.unwrap_or(0)
+        );
+    } else {
+        info!("GPU acceleration: disabled (CPU only)");
+    }
     if config.ptt_key.is_none() {
         info!("Silence threshold: {}ms", config.silence_threshold_ms);
     }

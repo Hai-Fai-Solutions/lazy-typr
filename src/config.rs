@@ -33,6 +33,15 @@ pub struct Config {
     #[serde(default)]
     pub ptt_key: Option<String>,
 
+    /// Use GPU for Whisper inference.
+    /// Requires the binary to be built with --features cuda / hipblas / vulkan.
+    #[serde(default)]
+    pub use_gpu: bool,
+
+    /// GPU device index (0 = first GPU). None = let whisper.cpp pick (device 0).
+    #[serde(default)]
+    pub gpu_device: Option<i32>,
+
     /// Print to stdout instead of typing
     #[serde(skip)]
     pub dry_run: bool,
@@ -59,6 +68,8 @@ impl Default for Config {
             vad_threshold: 0.01,
             log_level: default_log_level(),
             ptt_key: None,
+            use_gpu: false,
+            gpu_device: None,
             dry_run: false,
         }
     }
@@ -163,6 +174,16 @@ mod tests {
         assert!(!Config::default().dry_run);
     }
 
+    #[test]
+    fn test_default_use_gpu_is_false() {
+        assert!(!Config::default().use_gpu);
+    }
+
+    #[test]
+    fn test_default_gpu_device_is_none() {
+        assert!(Config::default().gpu_device.is_none());
+    }
+
     // ── Serialization round-trip ──────────────────────────────────────────────
 
     #[test]
@@ -188,6 +209,8 @@ mod tests {
         assert_eq!(restored.vad_threshold, original.vad_threshold);
         assert_eq!(restored.log_level, original.log_level);
         assert_eq!(restored.ptt_key, original.ptt_key);
+        assert_eq!(restored.use_gpu, original.use_gpu);
+        assert_eq!(restored.gpu_device, original.gpu_device);
     }
 
     #[test]
@@ -216,6 +239,21 @@ mod tests {
         }"#;
         let cfg: Config = serde_json::from_str(json).unwrap();
         assert_eq!(cfg.log_level, "info");
+    }
+
+    #[test]
+    fn test_deserialization_missing_use_gpu_defaults_to_false() {
+        let json = r#"{
+            "model_path": "/tmp/model.bin",
+            "language": "de",
+            "silence_threshold_ms": 800,
+            "min_speech_ms": 300,
+            "max_buffer_secs": 30.0,
+            "vad_threshold": 0.01
+        }"#;
+        let cfg: Config = serde_json::from_str(json).unwrap();
+        assert!(!cfg.use_gpu);
+        assert!(cfg.gpu_device.is_none());
     }
 
     #[test]
