@@ -11,7 +11,7 @@ Real-time speech-to-text for Linux — transcribes your speech locally with Open
 
 - 🎙️ **Real-time recording** via CPAL (ALSA/PulseAudio/Pipewire)
 - 🧠 **Local AI** via Whisper (ggml, no internet required)
-- ⌨️ **Automatic typing** into any focused text field (Wayland: `wtype`, X11: `xdotool`)
+- ⌨️ **Automatic typing** into any focused text field — `ydotool` (all compositors), `wtype` (Wayland), `xdotool` (X11); auto-detected at startup
 - 🔇 **Voice Activity Detection** — only sends audio when you are actually speaking
 - 🎯 **Push-to-Talk** — optional: hold a key to record (bypasses VAD)
 - 🌍 **Multilingual** — German, English, and all other Whisper languages
@@ -44,6 +44,9 @@ whisper-type
 sudo pacman -S xdotool alsa-lib pkgconf base-devel xclip
 # Wayland (Hyprland, Sway, etc.):
 sudo pacman -S wtype wl-clipboard
+# KDE Wayland — ydotool required; optional on other compositors:
+sudo pacman -S ydotool
+systemctl --user enable --now ydotoold
 ```
 
 **Debian/Ubuntu:**
@@ -51,6 +54,9 @@ sudo pacman -S wtype wl-clipboard
 sudo apt install xdotool libasound2-dev pkg-config build-essential xclip
 # Wayland:
 sudo apt install wtype wl-clipboard
+# KDE Wayland — ydotool required; optional on other compositors:
+sudo apt install ydotool
+systemctl --user enable --now ydotoold
 ```
 
 ### Download Whisper Model
@@ -203,7 +209,7 @@ Whisper (ggml, local)
 Text Filter (hallucinations)
      │
      ▼
-wtype (Wayland) / xdotool (X11) → active window
+ydotool (all compositors) / wtype (Wayland) / xdotool (X11) → active window
 ```
 
 ---
@@ -229,6 +235,25 @@ whisper-type --list-devices
 sudo pacman -S wtype
 # Debian/Ubuntu:
 sudo apt install wtype
+```
+
+**Text not typed on KDE Plasma (Wayland)**
+KDE does not implement the `zwlr_virtual_keyboard_v1` protocol used by `wtype`.
+`whisper-type` auto-detects `ydotool` and uses it instead — install it and enable the daemon:
+```bash
+# Arch:
+sudo pacman -S ydotool
+# Debian/Ubuntu:
+sudo apt install ydotool
+# Enable the daemon (once, persists across reboots):
+systemctl --user enable --now ydotoold
+```
+After installation, `whisper-type` picks it up automatically — no config change needed.
+
+**`ydotool: Cannot connect to ydotoold`**
+The daemon is not running. Enable it permanently:
+```bash
+systemctl --user enable --now ydotoold
 ```
 
 **Whisper model not found**
@@ -328,7 +353,7 @@ src/
 │   ├── mod.rs       # CPAL capture, downmix, resample, VAD/PTT dispatch
 │   └── vad.rs       # Energy-based Voice Activity Detection
 ├── transcriber.rs   # Whisper inference thread
-├── typer.rs         # wtype / xdotool dispatch thread
+├── typer.rs         # ydotool / wtype / xdotool dispatch thread
 └── ptt.rs           # evdev push-to-talk monitor thread
 tests/
 ├── config_integration.rs

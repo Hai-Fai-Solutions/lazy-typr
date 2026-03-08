@@ -5,9 +5,13 @@ use tracing::{debug, info, warn};
 /// -M presses the modifier, -k sends the key, -m releases the modifier.
 const WTYPE_PASTE_ARGS: &[&str] = &["-M", "ctrl", "-k", "v", "-m", "ctrl"];
 
+/// Arguments for ydotool to send Ctrl+V.
+const YDOTOOL_PASTE_ARGS: &[&str] = &["key", "ctrl+v"];
+
 enum Backend {
     X11,
     Wayland,
+    Ydotool,
 }
 
 pub struct Typer {
@@ -23,6 +27,7 @@ impl Typer {
         let (cmd, arg) = match backend {
             Backend::Wayland => ("wtype", "--version"),
             Backend::X11 => ("xdotool", "version"),
+            Backend::Ydotool => ("ydotool", "--help"),
         };
         std::process::Command::new(cmd)
             .arg(arg)
@@ -34,10 +39,14 @@ impl Typer {
     }
 
     pub fn new(dry_run: bool) -> Self {
-        let backend = if std::env::var("WAYLAND_DISPLAY").is_ok() {
+        let backend = if Self::probe_tool(&Backend::Ydotool) {
+            info!("ydotool detected — using ydotool (compositor-agnostic)");
+            Backend::Ydotool
+        } else if std::env::var("WAYLAND_DISPLAY").is_ok() {
             info!("Wayland display detected — using wtype");
             Backend::Wayland
         } else {
+            info!("X11 display detected — using xdotool");
             Backend::X11
         };
 
@@ -49,6 +58,7 @@ impl Typer {
                 let tool = match &backend {
                     Backend::Wayland => "wtype",
                     Backend::X11 => "xdotool",
+                    Backend::Ydotool => "ydotool",
                 };
                 warn!(
                     "{} not found on PATH; direct typing disabled, clipboard paste will be used",
@@ -99,6 +109,15 @@ impl Typer {
                 }
                 self.type_with_clipboard_wayland(&text_with_space)
             }
+            Backend::Ydotool => {
+                if self.tool_available && self.type_with_ydotool(&text_with_space).is_ok() {
+                    return Ok(());
+                }
+                if self.tool_available {
+                    info!("ydotool failed, falling back to clipboard paste");
+                }
+                self.type_with_clipboard_ydotool(&text_with_space)
+            }
         }
     }
 
@@ -130,6 +149,42 @@ impl Typer {
             let stderr = String::from_utf8_lossy(&output.stderr);
             anyhow::bail!("wtype failed: {}", stderr)
         }
+    }
+
+    fn type_with_ydotool(&self, text: &str) -> Result<()> {
+        let output = std::process::Command::new("ydotool")
+            .args(["type", "--key-delay=0", "--key-hold=0", "--", text])
+            .output()
+            .context("ydotool not found. Install with: sudo pacman -S ydotool")?;
+
+        if output.status.success() {
+            Ok(())
+        } else {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            anyhow::bail!("ydotool failed: {}", stderr)
+        }
+    }
+
+    fn type_with_clipboard_ydotool(&self, text: &str) -> Result<()> {
+        let saved = self.get_clipboard();
+
+        self.set_clipboard(text)?;
+        std::thread::sleep(std::time::Duration::from_millis(50));
+
+        let paste_result = std::process::Command::new("ydotool")
+            .args(YDOTOOL_PASTE_ARGS)
+            .status();
+
+        if let Ok(saved_text) = saved {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            let _ = self.set_clipboard(&saved_text);
+        }
+
+        paste_result
+            .context("ydotool key failed")?
+            .success()
+            .then_some(())
+            .ok_or_else(|| anyhow::anyhow!("ydotool key ctrl+v failed"))
     }
 
     fn type_with_clipboard_x11(&self, text: &str) -> Result<()> {
@@ -178,8 +233,8 @@ impl Typer {
     }
 
     fn set_clipboard(&self, text: &str) -> Result<()> {
-        // Try wl-copy first on Wayland
-        if matches!(self.backend, Backend::Wayland) {
+        // Try wl-copy first on Wayland / Ydotool (KDE Plasma)
+        if matches!(self.backend, Backend::Wayland | Backend::Ydotool) {
             let r = std::process::Command::new("wl-copy")
                 .stdin(std::process::Stdio::piped())
                 .spawn();
@@ -268,6 +323,16 @@ mod tests {
         assert!(typer.type_text("line one\nline two").is_ok());
     }
 
+    /// Ensure the clipboard-ydotool fallback uses correct ydotool key syntax.
+    #[test]
+    fn test_ydotool_key_combo_args_are_correct() {
+        assert_eq!(
+            YDOTOOL_PASTE_ARGS,
+            &["key", "ctrl+v"],
+            "ydotool paste args must be 'ydotool key ctrl+v'"
+        );
+    }
+
     /// Ensure the clipboard-wayland fallback uses correct wtype key syntax.
     #[test]
     fn test_wtype_key_combo_args_are_correct() {
@@ -295,6 +360,31 @@ mod tests {
         // We can't easily intercept subprocess calls, so this is a smoke test:
         // it must not panic, and must not attempt to call wtype for direct typing.
         let _ = typer.type_text("hello");
+    }
+
+    /// Smoke test: Backend::Ydotool variant exists and dry-run path does not reach the unreachable arm.
+    #[test]
+    fn test_dry_run_with_ydotool_backend() {
+        let typer = Typer {
+            dry_run: true,
+            backend: Backend::Ydotool,
+            tool_available: true,
+        };
+        assert!(typer.type_text("hello kde").is_ok());
+    }
+
+    /// When tool_available=false, type_text with Ydotool backend must skip direct typing.
+    /// (The clipboard path may fail in CI — that is acceptable; we only check it does not panic
+    /// and does not attempt the direct ydotool call.)
+    #[test]
+    fn test_type_text_skips_direct_typing_when_unavailable_ydotool() {
+        let typer = Typer {
+            dry_run: false,
+            backend: Backend::Ydotool,
+            tool_available: false,
+        };
+        // Must not panic. Result may be Err (no clipboard in CI).
+        let _ = typer.type_text("test");
     }
 
     /// When wtype/xdotool is not on PATH, tool_available must be false.
