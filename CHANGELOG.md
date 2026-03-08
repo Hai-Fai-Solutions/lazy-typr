@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 This file is automatically maintained by [cocogitto](https://github.com/cocogitto/cocogitto).
 
 - - -
+## [v0.3.0](https://github.com/Hai-Fai-Solutions/lazy-typr/compare/4ab592d4332fe56544af685c445b0032d09c11e2..v0.3.0) - 2026-03-08
+#### Continuous Integration
+- simplify branch model — remove develop, add bugfix/** (#10) - ([3e58aef](https://github.com/Hai-Fai-Solutions/lazy-typr/commit/3e58aefcd76534b9dd23c45ea7db299bc50d2455)) - Christian Polzer
+- prevent duplicate runs when push and PR fire for same commit (#8) - ([4ab592d](https://github.com/Hai-Fai-Solutions/lazy-typr/commit/4ab592d4332fe56544af685c445b0032d09c11e2)) - Christian Polzer
+#### Features
+- GPU inference via Vulkan (runtime opt-in) (#15) - ([47d7f90](https://github.com/Hai-Fai-Solutions/lazy-typr/commit/47d7f901656c080041115dd3f512c4cbd37959e0)) - Christian Polzer
+#### Miscellaneous Chores
+- add pre-commit auto-formatting and VSCode DX (#11) - ([b3a1b4d](https://github.com/Hai-Fai-Solutions/lazy-typr/commit/b3a1b4d094e48b8087e1bc32a12f885989b08be9)) - Christian Polzer
+
+- - -
+
 ## [v0.2.0](https://github.com/Hai-Fai-Solutions/lazy-typr/compare/650c80baaf61a837822d546e205e86c11a1ff640..v0.2.0) - 2026-03-07
 #### Features
 - add Renovate Bot for automated dependency updates (#7) (#9) - ([650c80b](https://github.com/Hai-Fai-Solutions/lazy-typr/commit/650c80baaf61a837822d546e205e86c11a1ff640)) - Christian Polzer
