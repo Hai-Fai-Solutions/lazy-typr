@@ -11,7 +11,6 @@ const YDOTOOL_PASTE_ARGS: &[&str] = &["key", "ctrl+v"];
 enum Backend {
     X11,
     Wayland,
-    #[allow(dead_code)] // wired into Typer::new in a later task
     Ydotool,
 }
 
@@ -40,7 +39,10 @@ impl Typer {
     }
 
     pub fn new(dry_run: bool) -> Self {
-        let backend = if std::env::var("WAYLAND_DISPLAY").is_ok() {
+        let backend = if Self::probe_tool(&Backend::Ydotool) {
+            info!("ydotool detected — using ydotool (compositor-agnostic)");
+            Backend::Ydotool
+        } else if std::env::var("WAYLAND_DISPLAY").is_ok() {
             info!("Wayland display detected — using wtype");
             Backend::Wayland
         } else {
