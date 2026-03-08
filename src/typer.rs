@@ -8,6 +8,7 @@ const WTYPE_PASTE_ARGS: &[&str] = &["-M", "ctrl", "-k", "v", "-m", "ctrl"];
 enum Backend {
     X11,
     Wayland,
+    Ydotool,
 }
 
 pub struct Typer {
@@ -23,6 +24,7 @@ impl Typer {
         let (cmd, arg) = match backend {
             Backend::Wayland => ("wtype", "--version"),
             Backend::X11 => ("xdotool", "version"),
+            Backend::Ydotool => ("ydotool", "--help"),
         };
         std::process::Command::new(cmd)
             .arg(arg)
@@ -49,6 +51,7 @@ impl Typer {
                 let tool = match &backend {
                     Backend::Wayland => "wtype",
                     Backend::X11 => "xdotool",
+                    Backend::Ydotool => "ydotool",
                 };
                 warn!(
                     "{} not found on PATH; direct typing disabled, clipboard paste will be used",
@@ -98,6 +101,9 @@ impl Typer {
                     info!("wtype failed, falling back to clipboard paste");
                 }
                 self.type_with_clipboard_wayland(&text_with_space)
+            }
+            Backend::Ydotool => {
+                unreachable!("ydotool path not yet implemented")
             }
         }
     }
@@ -295,6 +301,17 @@ mod tests {
         // We can't easily intercept subprocess calls, so this is a smoke test:
         // it must not panic, and must not attempt to call wtype for direct typing.
         let _ = typer.type_text("hello");
+    }
+
+    /// Smoke test: Backend::Ydotool variant exists and dry-run path does not reach the unreachable arm.
+    #[test]
+    fn test_dry_run_with_ydotool_backend() {
+        let typer = Typer {
+            dry_run: true,
+            backend: Backend::Ydotool,
+            tool_available: true,
+        };
+        assert!(typer.type_text("hello kde").is_ok());
     }
 
     /// When wtype/xdotool is not on PATH, tool_available must be false.
