@@ -13,6 +13,9 @@ use crate::config::Config;
 mod vad;
 use vad::{Vad, VadEvent};
 
+mod webrtc_vad;
+pub use webrtc_vad::WebrtcVadFilter;
+
 const WHISPER_SAMPLE_RATE: u32 = 16000;
 
 pub struct AudioCapture {
