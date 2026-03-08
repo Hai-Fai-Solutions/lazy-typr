@@ -44,7 +44,7 @@ evdev = "0.12"
 # VAD (Voice Activity Detection) - simple energy-based
 [dev-dependencies]
 tempfile = "3"
-cargo-husky = { version = "1", default-features = false, features = ["user-hooks"] }
+cargo-husky = { version = "1", default-features = false, features = ["precommit-hook"] }
 
 [build-dependencies]
 # nothing extra needed
