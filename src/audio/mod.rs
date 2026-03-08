@@ -193,6 +193,7 @@ fn prepare_samples(
 }
 
 /// Route audio to VAD or PTT handler based on mode.
+#[allow(clippy::too_many_arguments)]
 fn dispatch(
     resampled: &[f32],
     segment: &Arc<Mutex<Vec<f32>>>,
