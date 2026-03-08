@@ -11,6 +11,10 @@ use crossbeam_channel::unbounded;
 
 /// A minimal stand-in that drives VAD and forwards segments via a channel,
 /// mirroring the logic in `handle_audio_vad`.
+///
+///
+
+#[allow(dead_code)]
 struct VadPipeline {
     threshold: f32,
     sample_rate: u32,
