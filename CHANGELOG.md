@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 This file is automatically maintained by [cocogitto](https://github.com/cocogitto/cocogitto).
 
 - - -
+## [v0.5.0](https://github.com/Hai-Fai-Solutions/lazy-typr/compare/3033784ec53600a60a12a81a722ff5bec30830e1..v0.5.0) - 2026-03-08
+#### Features
+- **(audio)** add WebRTC VAD as two-stage noise gate (#18) - ([3033784](https://github.com/Hai-Fai-Solutions/lazy-typr/commit/3033784ec53600a60a12a81a722ff5bec30830e1)) - Christian Polzer
+
+- - -
+
 ## [v0.4.0](https://github.com/Hai-Fai-Solutions/lazy-typr/compare/bf66c772ac79628b1bd1adb57715f5f2436be212..v0.4.0) - 2026-03-08
 #### Features
 - ydotool backend for compositor-agnostic text injection (KDE support) (#17) - ([bf66c77](https://github.com/Hai-Fai-Solutions/lazy-typr/commit/bf66c772ac79628b1bd1adb57715f5f2436be212)) - Christian Polzer
