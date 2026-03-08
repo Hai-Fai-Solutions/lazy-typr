@@ -26,8 +26,8 @@ struct Args {
     device: Option<String>,
 
     /// Whisper language (e.g. "de", "en", auto-detect if not set)
-    #[arg(short, long, default_value = "de")]
-    language: String,
+    #[arg(short, long)]
+    language: Option<String>,
 
     /// Show available audio devices and exit
     #[arg(long)]
@@ -102,7 +102,7 @@ fn main() -> Result<()> {
     if let Some(device) = args.device {
         config.device_name = Some(device);
     }
-    config.language = args.language;
+    config.apply_language_override(args.language);
     config.silence_threshold_ms = args.silence_ms;
     if args.gpu {
         config.use_gpu = true;
