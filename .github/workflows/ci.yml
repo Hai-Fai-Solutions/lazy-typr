@@ -11,7 +11,9 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-
+  RUST_BACKTRACE: 1
+  CARGO_PROFILE_TEST_BUILD_OVERRIDE_DEBUG: true
+  
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
@@ -42,7 +44,15 @@ jobs:
         run: |
           sudo apt-get update -y
           sudo apt-get install -y cmake clang libasound2-dev libudev-dev \
-            libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
+            libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
+            libvulkan-dev
+
+      - name: Install Vulkan SDK
+        uses: jakoch/install-vulkan-sdk-action@v1
+        with:
+          install_runtime: false
+          cache: true
+          stripdown: true
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -74,7 +84,15 @@ jobs:
         run: |
           sudo apt-get update -y
           sudo apt-get install -y cmake clang libasound2-dev libudev-dev \
-            libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
+            libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
+            libvulkan-dev
+
+      - name: Install Vulkan SDK
+        uses: jakoch/install-vulkan-sdk-action@v1
+        with:
+          install_runtime: false
+          cache: true
+          stripdown: true
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
