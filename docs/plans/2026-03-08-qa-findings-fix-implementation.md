@@ -161,3 +161,22 @@ git commit -m "fix: preserve config language unless --language is provided"
 - `silence_ms` CLI/config merge changes
 - `whisper_task` parsing/serde/test coverage
 - Any additional QA findings not related to language override
+
+## Review Findings (Post-Implementation)
+
+1. Low: Public API compatibility risk  
+Status: `Open`  
+Detail: Removing `src/cli_overrides.rs` and `pub mod cli_overrides` from `src/lib.rs` can break external consumers importing `whisper_type::cli_overrides`.
+
+2. Low: Reduced end-to-end CLI merge regression coverage  
+Status: `Open`  
+Detail: `tests/cli_config_merge.rs` now validates `Config::apply_language_override` directly, but does not exercise clap parsing/wiring in `main.rs`.
+
+## Follow-up Actions for Findings
+
+1. Decide API compatibility intent:
+- If preserving compatibility, re-export a deprecated shim module for one release cycle.
+- If not preserving compatibility, call out the breaking change in release notes.
+
+2. Add one CLI-path regression test:
+- Add a parsing-level test that verifies absence/presence of `--language` results in expected effective config language when merged.

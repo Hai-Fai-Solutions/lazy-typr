@@ -116,6 +116,13 @@ impl Config {
         Ok(())
     }
 
+    /// Apply CLI language override only when it is explicitly provided.
+    pub fn apply_language_override(&mut self, language: Option<String>) {
+        if let Some(language) = language {
+            self.language = language;
+        }
+    }
+
     /// Save to an explicit path — used in tests to avoid touching the real config dir.
     #[cfg(test)]
     fn save_to(&self, path: &std::path::Path) -> Result<()> {
@@ -144,6 +151,30 @@ mod tests {
     #[test]
     fn test_default_language_is_german() {
         assert_eq!(Config::default().language, "de");
+    }
+
+    #[test]
+    fn test_apply_language_override_with_none_keeps_existing_value() {
+        let mut cfg = Config {
+            language: "fr".to_string(),
+            ..Config::default()
+        };
+
+        cfg.apply_language_override(None);
+
+        assert_eq!(cfg.language, "fr");
+    }
+
+    #[test]
+    fn test_apply_language_override_with_some_replaces_value() {
+        let mut cfg = Config {
+            language: "fr".to_string(),
+            ..Config::default()
+        };
+
+        cfg.apply_language_override(Some("en".to_string()));
+
+        assert_eq!(cfg.language, "en");
     }
 
     #[test]

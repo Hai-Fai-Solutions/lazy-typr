@@ -1,4 +1,3 @@
-use whisper_type::cli_overrides::{apply_cli_overrides, CliOverrides};
 use whisper_type::config::Config;
 
 #[test]
@@ -8,9 +7,7 @@ fn no_cli_flags_keeps_config_values() {
         silence_threshold_ms: 1200,
         ..Config::default()
     };
-    let overrides = CliOverrides { language: None };
-
-    apply_cli_overrides(&mut cfg, &overrides);
+    cfg.apply_language_override(None);
 
     assert_eq!(cfg.language, "fr");
     assert_eq!(cfg.silence_threshold_ms, 1200);
@@ -22,11 +19,7 @@ fn cli_language_overrides_config() {
         language: "fr".to_string(),
         ..Config::default()
     };
-    let overrides = CliOverrides {
-        language: Some("en".to_string()),
-    };
-
-    apply_cli_overrides(&mut cfg, &overrides);
+    cfg.apply_language_override(Some("en".to_string()));
 
     assert_eq!(cfg.language, "en");
 }
@@ -37,9 +30,7 @@ fn cli_without_language_does_not_mutate_language() {
         language: "es".to_string(),
         ..Config::default()
     };
-    let overrides = CliOverrides { language: None };
-
-    apply_cli_overrides(&mut cfg, &overrides);
+    cfg.apply_language_override(None);
 
     assert_eq!(cfg.language, "es");
 }

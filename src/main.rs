@@ -8,7 +8,6 @@ use std::sync::{
 use tracing::{debug, error, info};
 
 use whisper_type::audio::{self, AudioCapture};
-use whisper_type::cli_overrides::{apply_cli_overrides, CliOverrides};
 use whisper_type::config::Config;
 use whisper_type::ptt;
 use whisper_type::transcriber::Transcriber;
@@ -99,10 +98,7 @@ fn main() -> Result<()> {
     if let Some(device) = args.device {
         config.device_name = Some(device);
     }
-    let overrides = CliOverrides {
-        language: args.language,
-    };
-    apply_cli_overrides(&mut config, &overrides);
+    config.apply_language_override(args.language);
     config.silence_threshold_ms = args.silence_ms;
     if args.gpu {
         config.use_gpu = true;
