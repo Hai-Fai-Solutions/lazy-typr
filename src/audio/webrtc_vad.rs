@@ -7,6 +7,12 @@ pub struct WebrtcVadFilter {
     frame_buf: Vec<i16>,
 }
 
+// SAFETY: WebrtcVadFilter owns its internal `Vad` which wraps a raw pointer to
+// a C struct allocated per-instance.  The struct is never shared across threads
+// simultaneously; each cpal stream closure owns its own WebrtcVadFilter and
+// accesses it from a single callback thread.
+unsafe impl Send for WebrtcVadFilter {}
+
 impl WebrtcVadFilter {
     pub fn new(aggressiveness: u8) -> Self {
         let mode = match aggressiveness {
