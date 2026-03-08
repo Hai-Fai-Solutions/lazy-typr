@@ -8,6 +8,7 @@ const WTYPE_PASTE_ARGS: &[&str] = &["-M", "ctrl", "-k", "v", "-m", "ctrl"];
 enum Backend {
     X11,
     Wayland,
+    #[allow(dead_code)] // wired into Typer::new in a later task
     Ydotool,
 }
 
