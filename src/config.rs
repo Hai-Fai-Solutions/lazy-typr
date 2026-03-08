@@ -33,6 +33,10 @@ pub struct Config {
     #[serde(default)]
     pub ptt_key: Option<String>,
 
+    /// Use GPU (Vulkan) for Whisper inference. Default: false (CPU).
+    #[serde(default)]
+    pub use_gpu: bool,
+
     /// Print to stdout instead of typing
     #[serde(skip)]
     pub dry_run: bool,
@@ -59,6 +63,7 @@ impl Default for Config {
             vad_threshold: 0.01,
             log_level: default_log_level(),
             ptt_key: None,
+            use_gpu: false,
             dry_run: false,
         }
     }
@@ -161,6 +166,36 @@ mod tests {
     #[test]
     fn test_default_dry_run_is_false() {
         assert!(!Config::default().dry_run);
+    }
+
+    #[test]
+    fn test_default_use_gpu_is_false() {
+        assert!(!Config::default().use_gpu);
+    }
+
+    #[test]
+    fn test_use_gpu_round_trips_through_json() {
+        let cfg = Config {
+            use_gpu: true,
+            ..Config::default()
+        };
+        let json = serde_json::to_string(&cfg).unwrap();
+        let restored: Config = serde_json::from_str(&json).unwrap();
+        assert!(restored.use_gpu);
+    }
+
+    #[test]
+    fn test_use_gpu_absent_in_legacy_json_defaults_to_false() {
+        let json = r#"{
+            "model_path": "/tmp/model.bin",
+            "language": "de",
+            "silence_threshold_ms": 800,
+            "min_speech_ms": 300,
+            "max_buffer_secs": 30.0,
+            "vad_threshold": 0.01
+        }"#;
+        let cfg: Config = serde_json::from_str(json).unwrap();
+        assert!(!cfg.use_gpu);
     }
 
     // ── Serialization round-trip ──────────────────────────────────────────────
