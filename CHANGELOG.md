@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 This file is automatically maintained by [cocogitto](https://github.com/cocogitto/cocogitto).
 
 - - -
+## [v0.5.1](https://github.com/Hai-Fai-Solutions/lazy-typr/compare/f1522c3f0f0d42b9b8ddf6033d396a9f885da9be..v0.5.1) - 2026-03-08
+#### Bug Fixes
+- preserve config language unless --language is provided (#19) - ([f1522c3](https://github.com/Hai-Fai-Solutions/lazy-typr/commit/f1522c3f0f0d42b9b8ddf6033d396a9f885da9be)) - Christian Polzer
+
+- - -
+
 ## [v0.5.0](https://github.com/Hai-Fai-Solutions/lazy-typr/compare/3033784ec53600a60a12a81a722ff5bec30830e1..v0.5.0) - 2026-03-08
 #### Features
 - **(audio)** add WebRTC VAD as two-stage noise gate (#18) - ([3033784](https://github.com/Hai-Fai-Solutions/lazy-typr/commit/3033784ec53600a60a12a81a722ff5bec30830e1)) - Christian Polzer
