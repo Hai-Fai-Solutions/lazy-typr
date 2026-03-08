@@ -46,6 +46,7 @@ impl Typer {
             info!("Wayland display detected — using wtype");
             Backend::Wayland
         } else {
+            info!("X11 display detected — using xdotool");
             Backend::X11
         };
 
