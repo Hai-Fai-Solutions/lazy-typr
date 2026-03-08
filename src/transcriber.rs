@@ -74,7 +74,7 @@ impl Transcriber {
                 .get_segment(i)
                 .ok_or_else(|| anyhow::anyhow!("Failed to get segment {}", i))?;
             let seg_text = segment
-                .to_str()
+                .to_str_lossy()
                 .map_err(|e| anyhow::anyhow!("Failed to get segment text: {:?}", e))?;
             let seg = seg_text.trim();
 
