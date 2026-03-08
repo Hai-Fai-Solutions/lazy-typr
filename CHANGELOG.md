@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 This file is automatically maintained by [cocogitto](https://github.com/cocogitto/cocogitto).
 
 - - -
+## [v0.3.1](https://github.com/Hai-Fai-Solutions/lazy-typr/compare/61bccb127da463518289b5d38138c000a66dc0c1..v0.3.1) - 2026-03-08
+#### Bug Fixes
+- add Vulkan dependencies to CI and release workflows (#16) - ([61bccb1](https://github.com/Hai-Fai-Solutions/lazy-typr/commit/61bccb127da463518289b5d38138c000a66dc0c1)) - Christian Polzer
+
+- - -
+
 ## [v0.3.0](https://github.com/Hai-Fai-Solutions/lazy-typr/compare/4ab592d4332fe56544af685c445b0032d09c11e2..v0.3.0) - 2026-03-08
 #### Continuous Integration
 - simplify branch model — remove develop, add bugfix/** (#10) - ([3e58aef](https://github.com/Hai-Fai-Solutions/lazy-typr/commit/3e58aefcd76534b9dd23c45ea7db299bc50d2455)) - Christian Polzer
