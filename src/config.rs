@@ -41,6 +41,11 @@ pub struct Config {
     #[serde(default)]
     pub gpu_device: u32,
 
+    /// WebRTC VAD aggressiveness level (0 = least aggressive, 3 = most aggressive).
+    /// Higher values filter more background noise but may clip quiet speech.
+    #[serde(default = "default_webrtc_vad_aggressiveness")]
+    pub webrtc_vad_aggressiveness: u8,
+
     /// Print to stdout instead of typing
     #[serde(skip)]
     pub dry_run: bool,
@@ -48,6 +53,10 @@ pub struct Config {
 
 fn default_log_level() -> String {
     "info".to_string()
+}
+
+fn default_webrtc_vad_aggressiveness() -> u8 {
+    2
 }
 
 impl Default for Config {
@@ -69,6 +78,7 @@ impl Default for Config {
             ptt_key: None,
             use_gpu: false,
             gpu_device: 0,
+            webrtc_vad_aggressiveness: default_webrtc_vad_aggressiveness(),
             dry_run: false,
         }
     }
@@ -316,5 +326,35 @@ mod tests {
         assert_eq!(loaded.language, "fr");
         assert_eq!(loaded.vad_threshold, 0.02);
         assert_eq!(loaded.ptt_key, Some("KEY_F5".to_string()));
+    }
+
+    #[test]
+    fn test_default_webrtc_vad_aggressiveness_is_2() {
+        assert_eq!(Config::default().webrtc_vad_aggressiveness, 2);
+    }
+
+    #[test]
+    fn test_webrtc_vad_aggressiveness_round_trips_through_json() {
+        let cfg = Config {
+            webrtc_vad_aggressiveness: 3,
+            ..Config::default()
+        };
+        let json = serde_json::to_string(&cfg).unwrap();
+        let restored: Config = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored.webrtc_vad_aggressiveness, 3);
+    }
+
+    #[test]
+    fn test_webrtc_vad_aggressiveness_absent_in_legacy_json_defaults_to_2() {
+        let json = r#"{
+            "model_path": "/tmp/model.bin",
+            "language": "de",
+            "silence_threshold_ms": 800,
+            "min_speech_ms": 300,
+            "max_buffer_secs": 30.0,
+            "vad_threshold": 0.01
+        }"#;
+        let cfg: Config = serde_json::from_str(json).unwrap();
+        assert_eq!(cfg.webrtc_vad_aggressiveness, 2);
     }
 }
