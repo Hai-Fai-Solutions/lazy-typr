@@ -13,7 +13,10 @@ impl Transcriber {
     pub fn new(config: &Config) -> Result<Self> {
         let ctx = WhisperContext::new_with_params(
             config.model_path.to_str().context("Invalid model path")?,
-            WhisperContextParameters::default(),
+            WhisperContextParameters {
+                use_gpu: config.use_gpu,
+                ..Default::default()
+            },
         )
         .context("Failed to load Whisper model")?;
 
