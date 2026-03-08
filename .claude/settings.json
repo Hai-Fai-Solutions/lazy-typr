@@ -10,7 +10,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd /home/chris/develop/hai-fa-solutions/lazy-typr && cargo fmt 2>&1 && cargo clippy -- -D warnings 2>&1 | head -40"
+            "command": "cd \"$(git rev-parse --show-toplevel)\" && cargo fmt 2>&1 && cargo clippy -- -D warnings 2>&1 | head -40"
           }
         ]
       }

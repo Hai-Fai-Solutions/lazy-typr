@@ -50,6 +50,8 @@ Stored at `~/.config/whisper-type/config.json`. Key parameters:
 - `vad_threshold` — RMS energy threshold for voice detection (default: 0.01)
 - `log_level` — log verbosity: `"error"`, `"warn"`, `"info"`, `"debug"`, `"trace"` (default: `"info"`)
 - `ptt_key` — PTT key name (e.g. `"KEY_SPACE"`, `"KEY_CAPSLOCK"`); `null` = VAD mode (default)
+- `use_gpu` — Use Vulkan GPU for Whisper inference; `false` = CPU only (default)
+- `gpu_device` — Vulkan device index to use when `use_gpu` is true (default: `0`)
 
 Override priority (lowest → highest): `config.json` → CLI flag → `RUST_LOG` env var (log level only)
 
@@ -64,7 +66,7 @@ cargo build           # debug
 cargo build --release # release (LTO, opt-level 3)
 ```
 
-`whisper-rs` requires cmake and a C++ compiler (`cmake clang` on Arch, `cmake clang` on Debian/Ubuntu).
+`whisper-rs` requires cmake, a C++ compiler, and Vulkan headers (`cmake clang vulkan-headers` on Arch; `cmake clang libvulkan-dev` on Debian/Ubuntu).
 
 ### Run
 

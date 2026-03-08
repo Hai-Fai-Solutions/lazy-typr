@@ -269,6 +269,13 @@ sudo usermod -aG input $USER
   # Debian/Ubuntu:
   sudo apt install cmake clang
   ```
+- Vulkan headers are required (the `vulkan` feature is always compiled in):
+  ```bash
+  # Arch/CachyOS:
+  sudo pacman -S vulkan-headers
+  # Debian/Ubuntu:
+  sudo apt install libvulkan-dev
+  ```
 
 ### Clone & build
 

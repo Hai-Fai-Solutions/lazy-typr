@@ -41,6 +41,18 @@ struct Args {
     #[arg(long)]
     ptt_key: Option<String>,
 
+    /// Enable GPU (Vulkan) inference
+    #[arg(long)]
+    gpu: bool,
+
+    /// GPU device index to use for Vulkan inference (implies --gpu)
+    #[arg(long, value_name = "N")]
+    gpu_device: Option<u32>,
+
+    /// List available Vulkan GPU devices and exit
+    #[arg(long)]
+    list_gpu_devices: bool,
+
     /// Print transcribed text to stdout instead of typing it
     #[arg(long)]
     dry_run: bool,
@@ -59,6 +71,25 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
+    if args.list_gpu_devices {
+        let devices = whisper_rs::vulkan::list_devices();
+        if devices.is_empty() {
+            println!("No Vulkan GPU devices found.");
+        } else {
+            println!("GPU devices:");
+            for dev in &devices {
+                println!(
+                    "  {}: {}  ({} MB total, {} MB free)",
+                    dev.id,
+                    dev.name,
+                    dev.vram.total / 1024 / 1024,
+                    dev.vram.free / 1024 / 1024,
+                );
+            }
+        }
+        return Ok(());
+    }
+
     // Load config (merge with CLI args)
     let mut config = Config::load_or_default_quiet()?;
     if let Some(model) = args.model {
@@ -69,6 +100,13 @@ fn main() -> Result<()> {
     }
     config.language = args.language;
     config.silence_threshold_ms = args.silence_ms;
+    if args.gpu {
+        config.use_gpu = true;
+    }
+    if let Some(dev) = args.gpu_device {
+        config.use_gpu = true;
+        config.gpu_device = dev;
+    }
     config.dry_run = args.dry_run;
     if let Some(level) = args.log_level {
         config.log_level = level;
@@ -112,6 +150,14 @@ fn main() -> Result<()> {
     }
     if config.dry_run {
         info!("Dry-run mode: text will be printed to stdout");
+    }
+    if config.use_gpu {
+        info!(
+            "GPU inference: enabled (Vulkan, device {})",
+            config.gpu_device
+        );
+    } else {
+        info!("GPU inference: disabled (CPU)");
     }
 
     // Shared running flag
