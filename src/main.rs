@@ -41,6 +41,10 @@ struct Args {
     #[arg(long)]
     ptt_key: Option<String>,
 
+    /// Enable GPU (Vulkan) inference
+    #[arg(long)]
+    gpu: bool,
+
     /// Print transcribed text to stdout instead of typing it
     #[arg(long)]
     dry_run: bool,
@@ -69,6 +73,9 @@ fn main() -> Result<()> {
     }
     config.language = args.language;
     config.silence_threshold_ms = args.silence_ms;
+    if args.gpu {
+        config.use_gpu = true;
+    }
     config.dry_run = args.dry_run;
     if let Some(level) = args.log_level {
         config.log_level = level;
@@ -112,6 +119,11 @@ fn main() -> Result<()> {
     }
     if config.dry_run {
         info!("Dry-run mode: text will be printed to stdout");
+    }
+    if config.use_gpu {
+        info!("GPU inference: enabled (Vulkan)");
+    } else {
+        info!("GPU inference: disabled (CPU)");
     }
 
     // Shared running flag
