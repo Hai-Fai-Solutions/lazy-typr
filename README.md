@@ -269,6 +269,13 @@ sudo usermod -aG input $USER
   # Debian/Ubuntu:
   sudo apt install cmake clang
   ```
+- GPU builds additionally require Vulkan headers:
+  ```bash
+  # Arch/CachyOS:
+  sudo pacman -S vulkan-headers
+  # Debian/Ubuntu:
+  sudo apt install libvulkan-dev
+  ```
 
 ### Clone & build
 
