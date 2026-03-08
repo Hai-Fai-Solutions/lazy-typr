@@ -230,7 +230,7 @@ impl Typer {
     }
 
     fn set_clipboard(&self, text: &str) -> Result<()> {
-        // Try wl-copy first on Wayland
+        // Try wl-copy first on Wayland / Ydotool (KDE Plasma)
         if matches!(self.backend, Backend::Wayland | Backend::Ydotool) {
             let r = std::process::Command::new("wl-copy")
                 .stdin(std::process::Stdio::piped())
