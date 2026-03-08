@@ -8,6 +8,7 @@ use std::sync::{
 use tracing::{debug, error, info};
 
 use whisper_type::audio::{self, AudioCapture};
+use whisper_type::cli_overrides::{apply_cli_overrides, CliOverrides};
 use whisper_type::config::Config;
 use whisper_type::ptt;
 use whisper_type::transcriber::Transcriber;
@@ -26,8 +27,8 @@ struct Args {
     device: Option<String>,
 
     /// Whisper language (e.g. "de", "en", auto-detect if not set)
-    #[arg(short, long, default_value = "de")]
-    language: String,
+    #[arg(short, long)]
+    language: Option<String>,
 
     /// Show available audio devices and exit
     #[arg(long)]
@@ -98,7 +99,10 @@ fn main() -> Result<()> {
     if let Some(device) = args.device {
         config.device_name = Some(device);
     }
-    config.language = args.language;
+    let overrides = CliOverrides {
+        language: args.language,
+    };
+    apply_cli_overrides(&mut config, &overrides);
     config.silence_threshold_ms = args.silence_ms;
     if args.gpu {
         config.use_gpu = true;

@@ -92,7 +92,7 @@ USAGE:
 OPTIONS:
     -m, --model <PATH>        Path to the GGML model file
     -d, --device <NAME>       Audio input device (default: system default)
-    -l, --language <LANG>     Language (de, en, fr, ...) [default: de]
+    -l, --language <LANG>     Language (de, en, fr, ...)
         --silence-ms <MS>     Silence threshold in ms [default: 800]
         --list-devices        List available audio devices
         --dry-run             Print text to stdout instead of typing
@@ -169,6 +169,7 @@ Stored at `~/.config/whisper-type/config.json`:
 | `ptt_key` | Push-to-Talk key (e.g. `"KEY_SPACE"`). `null` = VAD mode | `null` |
 
 **Log level priority** (lowest to highest): `config.json` → `--log-level` flag → `RUST_LOG` environment variable
+**Language priority** (lowest to highest): built-in default (`de`) when config is missing → `config.json` value → `--language` flag
 
 ### Setting Up Push-to-Talk
 
