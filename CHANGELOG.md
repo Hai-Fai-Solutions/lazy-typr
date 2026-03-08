@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 This file is automatically maintained by [cocogitto](https://github.com/cocogitto/cocogitto).
 
 - - -
+## [v0.4.0](https://github.com/Hai-Fai-Solutions/lazy-typr/compare/bf66c772ac79628b1bd1adb57715f5f2436be212..v0.4.0) - 2026-03-08
+#### Features
+- ydotool backend for compositor-agnostic text injection (KDE support) (#17) - ([bf66c77](https://github.com/Hai-Fai-Solutions/lazy-typr/commit/bf66c772ac79628b1bd1adb57715f5f2436be212)) - Christian Polzer
+
+- - -
+
 ## [v0.3.1](https://github.com/Hai-Fai-Solutions/lazy-typr/compare/61bccb127da463518289b5d38138c000a66dc0c1..v0.3.1) - 2026-03-08
 #### Bug Fixes
 - add Vulkan dependencies to CI and release workflows (#16) - ([61bccb1](https://github.com/Hai-Fai-Solutions/lazy-typr/commit/61bccb127da463518289b5d38138c000a66dc0c1)) - Christian Polzer
