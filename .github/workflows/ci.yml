@@ -5,9 +5,21 @@ on:
     branches:
       - "feature/**"
       - "bugfix/**"
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/**'
   pull_request:
     branches:
       - main
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/**'
 
 env:
   CARGO_TERM_COLOR: always
