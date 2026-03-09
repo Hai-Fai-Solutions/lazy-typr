@@ -10,6 +10,7 @@ on:
       - 'tests/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
+      - 'rustfmt.toml'
       - '.github/workflows/**'
   pull_request:
     branches:
@@ -19,6 +20,7 @@ on:
       - 'tests/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
+      - 'rustfmt.toml'
       - '.github/workflows/**'
 
 env:
