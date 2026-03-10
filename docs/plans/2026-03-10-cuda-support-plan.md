@@ -10,10 +10,12 @@
 
 ---
 
-## Task 1: Add dependencies
+## Task 1: Add dependencies and update CI workflows
 
 **Files:**
 - Modify: `Cargo.toml`
+- Modify: `.github/workflows/ci.yml`
+- Modify: `.github/workflows/release.yml`
 
 **Step 1: Update Cargo.toml**
 
@@ -24,19 +26,38 @@ whisper-rs = { version = "0.15", features = ["vulkan", "cuda"] }
 nvml-wrapper = "0.12"
 ```
 
-**Step 2: Verify it compiles**
+**Step 2: Update CI workflows to install CUDA toolkit**
 
-```bash
-cargo build 2>&1 | head -30
+Both `ci.yml` (clippy + test jobs) and `release.yml` need the CUDA toolkit for compilation. Use the `Jimver/cuda-toolkit` GitHub Action. Add it **after** the Vulkan SDK step and **before** the Rust toolchain step in each job that runs `cargo`.
+
+In `ci.yml`, add to the `clippy` job steps (after `Install Vulkan SDK`, before `Install Rust stable`):
+
+```yaml
+      - name: Install CUDA toolkit
+        uses: Jimver/cuda-toolkit@v0.2.22
+        with:
+          cuda: '12.6.3'
+          method: 'network'
+          sub-packages: '["nvcc", "cudart-dev"]'
 ```
 
-Expected: build succeeds (may be slow — compiling whisper.cpp with CUDA). If CUDA toolkit is not installed, the build will fail with a linker or cmake error. Prerequisite: `cuda` toolkit installed (`nvcc` on PATH, `/usr/local/cuda` present on Linux).
+Repeat the same block in the `test` job and in `release.yml`'s `build-and-release` job.
 
-**Step 3: Commit**
+Only `nvcc` and `cudart-dev` are needed — this avoids downloading the full ~3 GB CUDA suite. The `network` method fetches only what's requested.
+
+**Step 3: Verify local build with CUDA toolkit installed**
 
 ```bash
-git add Cargo.toml Cargo.lock
-git commit -m "chore: add cuda feature and nvml-wrapper dependency"
+cargo build 2>&1 | tail -5
+```
+
+Expected: build succeeds. (Prerequisite: `cuda` toolkit installed locally — `sudo pacman -S cuda` on Arch/CachyOS.)
+
+**Step 4: Commit**
+
+```bash
+git add Cargo.toml Cargo.lock .github/workflows/ci.yml .github/workflows/release.yml
+git commit -m "chore: add cuda feature, nvml-wrapper, and CUDA toolkit in CI"
 ```
 
 ---

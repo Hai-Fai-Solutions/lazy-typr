@@ -114,16 +114,24 @@ New examples:
 
 ```toml
 whisper-rs = { version = "0.15", features = ["vulkan", "cuda"] }
-nvml-wrapper = "0.10"
+nvml-wrapper = "0.12"
 ```
 
 Build requirements: CUDA toolkit + Vulkan headers both required at build time.
+
+## CI Changes
+
+Both `ci.yml` and `release.yml` install the CUDA toolkit using `Jimver/cuda-toolkit@v0.2.22`
+(sub-packages: `nvcc` + `cudart-dev` only — avoids the full ~3 GB suite).
+No actual GPU hardware is needed in CI; the toolkit is only required for compilation.
 
 ## Files Changed
 
 | File | Change |
 |------|--------|
 | `Cargo.toml` | Add `cuda` feature, add `nvml-wrapper` |
+| `.github/workflows/ci.yml` | Add CUDA toolkit install step to clippy + test jobs |
+| `.github/workflows/release.yml` | Add CUDA toolkit install step to build job |
 | `src/gpu.rs` | New module: `GpuBackend`, `ResolvedBackend`, `detect_backend`, `list_gpu_devices` |
 | `src/lib.rs` | Expose `pub mod gpu` |
 | `src/config.rs` | Replace `use_gpu: bool` with `gpu_backend: GpuBackend`; keep `gpu_device` |
