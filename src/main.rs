@@ -8,7 +8,7 @@ use std::sync::{
 use tracing::{debug, error, info};
 
 use whisper_type::audio::{self, AudioCapture};
-use whisper_type::config::Config;
+use whisper_type::config::{Config, Task};
 use whisper_type::ptt;
 use whisper_type::transcriber::Transcriber;
 use whisper_type::typer::Typer;
@@ -57,6 +57,10 @@ struct Args {
     #[arg(long, value_name = "0-3")]
     webrtc_vad_aggressiveness: Option<u8>,
 
+    /// Whisper inference task: transcribe (default) or translate
+    #[arg(long, value_enum)]
+    whisper_task: Option<Task>,
+
     /// Print transcribed text to stdout instead of typing it
     #[arg(long)]
     dry_run: bool,
@@ -103,6 +107,7 @@ fn main() -> Result<()> {
         config.device_name = Some(device);
     }
     config.apply_language_override(args.language);
+    config.apply_whisper_task_override(args.whisper_task);
     config.silence_threshold_ms = args.silence_ms;
     if args.gpu {
         config.use_gpu = true;
@@ -159,6 +164,13 @@ fn main() -> Result<()> {
     info!("whisper-type starting...");
     info!("Model: {}", config.model_path.display());
     info!("Language: {}", config.language);
+    info!(
+        "Whisper task: {}",
+        match config.whisper_task {
+            Task::Transcribe => "transcribe",
+            Task::Translate => "translate",
+        }
+    );
     if config.ptt_key.is_none() {
         info!("Silence threshold: {}ms", config.silence_threshold_ms);
     }
