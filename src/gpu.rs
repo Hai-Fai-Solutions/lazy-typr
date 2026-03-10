@@ -44,6 +44,58 @@ fn probe_auto(device: u32) -> ResolvedBackend {
     ResolvedBackend::Cpu
 }
 
+/// Print available GPU devices to stdout.
+/// Shows CUDA devices (via NVML) and Vulkan devices in separate sections.
+/// Silently skips each section if the underlying library fails to initialize.
+pub fn list_gpu_devices() {
+    let mut any = false;
+
+    // CUDA devices via NVML
+    if let Ok(nvml) = nvml_wrapper::Nvml::init() {
+        let count = nvml.device_count().unwrap_or(0);
+        if count > 0 {
+            any = true;
+            println!("CUDA devices (NVIDIA):");
+            for i in 0..count {
+                if let Ok(dev) = nvml.device_by_index(i) {
+                    let name = dev.name().unwrap_or_else(|_| "unknown".to_string());
+                    let mem = dev.memory_info();
+                    match mem {
+                        Ok(m) => println!(
+                            "  {}: {}  ({} MB total, {} MB free)",
+                            i,
+                            name,
+                            m.total / 1024 / 1024,
+                            m.free / 1024 / 1024,
+                        ),
+                        Err(_) => println!("  {}: {}", i, name),
+                    }
+                }
+            }
+        }
+    }
+
+    // Vulkan devices
+    let vulkan_devices = whisper_rs::vulkan::list_devices();
+    if !vulkan_devices.is_empty() {
+        any = true;
+        println!("Vulkan devices:");
+        for dev in &vulkan_devices {
+            println!(
+                "  {}: {}  ({} MB total, {} MB free)",
+                dev.id,
+                dev.name,
+                dev.vram.total / 1024 / 1024,
+                dev.vram.free / 1024 / 1024,
+            );
+        }
+    }
+
+    if !any {
+        println!("No GPU devices found.");
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
