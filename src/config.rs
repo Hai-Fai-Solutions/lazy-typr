@@ -3,17 +3,12 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 /// Whisper inference task.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, clap::ValueEnum)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, clap::ValueEnum, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum Task {
+    #[default]
     Transcribe,
     Translate,
-}
-
-impl Default for Task {
-    fn default() -> Self {
-        Task::Transcribe
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
