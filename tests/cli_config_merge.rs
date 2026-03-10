@@ -36,6 +36,26 @@ fn cli_without_language_does_not_mutate_language() {
 }
 
 #[test]
+fn cli_without_silence_ms_does_not_mutate_silence_threshold() {
+    let mut cfg = Config {
+        silence_threshold_ms: 1500,
+        ..Config::default()
+    };
+    cfg.apply_silence_override(None);
+    assert_eq!(cfg.silence_threshold_ms, 1500);
+}
+
+#[test]
+fn cli_silence_ms_overrides_config() {
+    let mut cfg = Config {
+        silence_threshold_ms: 1500,
+        ..Config::default()
+    };
+    cfg.apply_silence_override(Some(400));
+    assert_eq!(cfg.silence_threshold_ms, 400);
+}
+
+#[test]
 fn no_cli_task_keeps_config_task() {
     let mut cfg = Config {
         whisper_task: Task::Translate,
