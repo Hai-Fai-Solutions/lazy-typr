@@ -18,6 +18,32 @@ pub enum ResolvedBackend {
     Cpu,
 }
 
+/// Resolve the configured backend to a concrete choice.
+/// `Auto` probes for NVIDIA via nvml, then falls back to Vulkan, then CPU.
+pub fn detect_backend(backend: &GpuBackend, device: u32) -> ResolvedBackend {
+    match backend {
+        GpuBackend::Cpu => ResolvedBackend::Cpu,
+        GpuBackend::Cuda => ResolvedBackend::Cuda(device),
+        GpuBackend::Vulkan => ResolvedBackend::Vulkan(device),
+        GpuBackend::Auto => probe_auto(device),
+    }
+}
+
+fn probe_auto(device: u32) -> ResolvedBackend {
+    // Try NVIDIA via NVML
+    if let Ok(nvml) = nvml_wrapper::Nvml::init() {
+        if nvml.device_count().unwrap_or(0) > 0 {
+            return ResolvedBackend::Cuda(device);
+        }
+    }
+    // Try Vulkan
+    let vulkan_devices = whisper_rs::vulkan::list_devices();
+    if !vulkan_devices.is_empty() {
+        return ResolvedBackend::Vulkan(device);
+    }
+    ResolvedBackend::Cpu
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -67,5 +93,26 @@ mod tests {
     #[test]
     fn test_gpu_backend_invalid_value_fails() {
         assert!(serde_json::from_str::<GpuBackend>(r#""GPU""#).is_err());
+    }
+
+    #[test]
+    fn test_detect_cpu_returns_cpu() {
+        assert_eq!(detect_backend(&GpuBackend::Cpu, 0), ResolvedBackend::Cpu);
+    }
+
+    #[test]
+    fn test_detect_cuda_explicit_returns_cuda_with_device() {
+        assert_eq!(
+            detect_backend(&GpuBackend::Cuda, 2),
+            ResolvedBackend::Cuda(2)
+        );
+    }
+
+    #[test]
+    fn test_detect_vulkan_explicit_returns_vulkan_with_device() {
+        assert_eq!(
+            detect_backend(&GpuBackend::Vulkan, 1),
+            ResolvedBackend::Vulkan(1)
+        );
     }
 }
