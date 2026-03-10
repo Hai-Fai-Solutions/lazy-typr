@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 This file is automatically maintained by [cocogitto](https://github.com/cocogitto/cocogitto).
 
 - - -
+## [v0.6.0](https://github.com/Hai-Fai-Solutions/lazy-typr/compare/0370f37a77313c0cd4e8d16da778b099ea98234f..v0.6.0) - 2026-03-10
+#### Features
+- transcribe-by-default + CI paths allowlist (#20) - ([0370f37](https://github.com/Hai-Fai-Solutions/lazy-typr/commit/0370f37a77313c0cd4e8d16da778b099ea98234f)) - Christian Polzer
+
+- - -
+
 ## [v0.5.1](https://github.com/Hai-Fai-Solutions/lazy-typr/compare/f1522c3f0f0d42b9b8ddf6033d396a9f885da9be..v0.5.1) - 2026-03-08
 #### Bug Fixes
 - preserve config language unless --language is provided (#19) - ([f1522c3](https://github.com/Hai-Fai-Solutions/lazy-typr/commit/f1522c3f0f0d42b9b8ddf6033d396a9f885da9be)) - Christian Polzer
