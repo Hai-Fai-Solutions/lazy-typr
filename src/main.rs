@@ -33,9 +33,9 @@ struct Args {
     #[arg(long)]
     list_devices: bool,
 
-    /// VAD silence threshold in milliseconds
-    #[arg(long, default_value = "800")]
-    silence_ms: u64,
+    /// VAD silence threshold in milliseconds (default from config or 800)
+    #[arg(long)]
+    silence_ms: Option<u64>,
 
     /// Push-to-talk mode: hold key to record (e.g. "ctrl+space")
     #[arg(long)]
@@ -108,7 +108,7 @@ fn main() -> Result<()> {
     }
     config.apply_language_override(args.language);
     config.apply_whisper_task_override(args.whisper_task);
-    config.silence_threshold_ms = args.silence_ms;
+    config.apply_silence_override(args.silence_ms);
     if args.gpu {
         config.use_gpu = true;
     }
