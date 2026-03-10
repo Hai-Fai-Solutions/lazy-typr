@@ -110,7 +110,7 @@ fn main() -> Result<()> {
     config.apply_whisper_task_override(args.whisper_task);
     config.silence_threshold_ms = args.silence_ms;
     if args.gpu {
-        config.gpu_backend = whisper_type::gpu::GpuBackend::Auto; // TODO Task 7: map --gpu flag to backend
+        config.gpu_backend = whisper_type::gpu::GpuBackend::Auto; // --gpu is a no-op (Auto is the default) but kept for backward compat — Task 7
     }
     if let Some(dev) = args.gpu_device {
         config.gpu_device = dev;
