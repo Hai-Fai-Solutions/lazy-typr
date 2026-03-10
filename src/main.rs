@@ -98,7 +98,7 @@ fn main() -> Result<()> {
     }
     config.apply_language_override(args.language);
     config.apply_whisper_task_override(args.whisper_task);
-    config.silence_threshold_ms = args.silence_ms;
+    config.apply_silence_override(args.silence_ms);
     if let Some(backend_str) = args.gpu_backend {
         config.gpu_backend = match backend_str.as_str() {
             "auto" => whisper_type::gpu::GpuBackend::Auto,
@@ -116,9 +116,6 @@ fn main() -> Result<()> {
     } else if args.gpu {
         // --gpu forces Auto (overrides any "cpu" set in config.json), kept for backward compat
         config.gpu_backend = whisper_type::gpu::GpuBackend::Auto;
-    config.apply_silence_override(args.silence_ms);
-    if args.gpu {
-        config.use_gpu = true;
     }
     if let Some(dev) = args.gpu_device {
         config.gpu_device = dev;
