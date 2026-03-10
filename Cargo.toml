@@ -19,6 +19,8 @@ webrtc-vad = "0.4"
 
 # Whisper bindings
 whisper-rs = { version = "0.15", features = ["vulkan", "cuda"] }
+
+# GPU detection (NVML for NVIDIA probe)
 nvml-wrapper = "0.12"
 
 # Clipboard / xdotool interaction
