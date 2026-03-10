@@ -18,7 +18,8 @@ cpal = "0.15"
 webrtc-vad = "0.4"
 
 # Whisper bindings
-whisper-rs = { version = "0.15", features = ["vulkan"] }
+whisper-rs = { version = "0.15", features = ["vulkan", "cuda"] }
+nvml-wrapper = "0.12"
 
 # Clipboard / xdotool interaction
 arboard = "3.3"
