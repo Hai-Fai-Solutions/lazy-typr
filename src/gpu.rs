@@ -33,14 +33,17 @@ fn probe_auto(device: u32) -> ResolvedBackend {
     // Try NVIDIA via NVML
     if let Ok(nvml) = nvml_wrapper::Nvml::init() {
         if nvml.device_count().unwrap_or(0) > 0 {
+            tracing::debug!("auto: NVIDIA GPU detected via NVML, selecting CUDA backend");
             return ResolvedBackend::Cuda(device);
         }
     }
     // Try Vulkan
     let vulkan_devices = whisper_rs::vulkan::list_devices();
     if !vulkan_devices.is_empty() {
+        tracing::debug!("auto: Vulkan devices found, selecting Vulkan backend");
         return ResolvedBackend::Vulkan(device);
     }
+    tracing::debug!("auto: no GPU detected, falling back to CPU");
     ResolvedBackend::Cpu
 }
 
