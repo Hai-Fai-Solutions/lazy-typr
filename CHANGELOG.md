@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 This file is automatically maintained by [cocogitto](https://github.com/cocogitto/cocogitto).
 
 - - -
+## [v0.7.0](https://github.com/Hai-Fai-Solutions/lazy-typr/compare/144dd1b5a632607d92754ee8911d6e83762744ed..v0.7.0) - 2026-03-10
+#### Features
+- native GPU backend selection (CUDA + Vulkan auto-detect) (#22) - ([342e8ee](https://github.com/Hai-Fai-Solutions/lazy-typr/commit/342e8ee514d9c19b04ae70d0c0c10dd42a0d2035)) - Christian Polzer
+
+- - -
+
 ## [v0.6.1](https://github.com/Hai-Fai-Solutions/lazy-typr/compare/847757d9c1cd10e020b66dbb7dba17fdbc50fb66..v0.6.1) - 2026-03-10
 #### Bug Fixes
 - **(config)** make --silence-ms explicit-only, preserve config value when omitted (#21) - ([847757d](https://github.com/Hai-Fai-Solutions/lazy-typr/commit/847757d9c1cd10e020b66dbb7dba17fdbc50fb66)) - Christian Polzer

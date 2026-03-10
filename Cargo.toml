@@ -1,6 +1,6 @@
 [package]
 name = "whisper-type"
-version = "0.6.1"
+version = "0.7.0"
 edition = "2021"
 description = "Real-time speech-to-text that types into focused input fields"
 
