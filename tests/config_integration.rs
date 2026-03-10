@@ -17,11 +17,17 @@ struct ConfigSnapshot {
     log_level: String,
     #[serde(default)]
     ptt_key: Option<String>,
+    #[serde(default = "default_whisper_task")]
+    whisper_task: String,
     model_path: PathBuf,
 }
 
 fn default_log_level() -> String {
     "info".to_string()
+}
+
+fn default_whisper_task() -> String {
+    "transcribe".to_string()
 }
 
 fn write_and_read_back(snapshot: &ConfigSnapshot) -> ConfigSnapshot {
@@ -43,6 +49,7 @@ fn config_full_roundtrip() {
         vad_threshold: 0.03,
         log_level: "debug".to_string(),
         ptt_key: Some("KEY_F10".to_string()),
+        whisper_task: "translate".to_string(),
         model_path: PathBuf::from("/tmp/ggml-base.bin"),
     };
 
@@ -64,6 +71,7 @@ fn config_missing_optional_fields_use_defaults() {
     let cfg: ConfigSnapshot = serde_json::from_str(json).unwrap();
     assert!(cfg.ptt_key.is_none());
     assert_eq!(cfg.log_level, "info");
+    assert_eq!(cfg.whisper_task, "transcribe");
 }
 
 #[test]
@@ -79,6 +87,7 @@ fn config_file_survives_multiple_write_read_cycles() {
         vad_threshold: 0.01,
         log_level: "info".to_string(),
         ptt_key: None,
+        whisper_task: "transcribe".to_string(),
         model_path: PathBuf::from("/tmp/model.bin"),
     };
 
