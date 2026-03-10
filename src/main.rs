@@ -41,15 +41,19 @@ struct Args {
     #[arg(long)]
     ptt_key: Option<String>,
 
-    /// Enable GPU (Vulkan) inference
+    /// GPU backend: auto (default), cuda, vulkan, cpu
+    #[arg(long, value_name = "BACKEND")]
+    gpu_backend: Option<String>,
+
+    /// Enable GPU inference (shorthand for --gpu-backend auto, kept for backward compat)
     #[arg(long)]
     gpu: bool,
 
-    /// GPU device index to use for Vulkan inference (implies --gpu)
+    /// GPU device index (applies to whichever backend is active)
     #[arg(long, value_name = "N")]
     gpu_device: Option<u32>,
 
-    /// List available Vulkan GPU devices and exit
+    /// List available GPU devices (CUDA and Vulkan) and exit
     #[arg(long)]
     list_gpu_devices: bool,
 
@@ -80,21 +84,7 @@ fn main() -> Result<()> {
     }
 
     if args.list_gpu_devices {
-        let devices = whisper_rs::vulkan::list_devices();
-        if devices.is_empty() {
-            println!("No Vulkan GPU devices found.");
-        } else {
-            println!("GPU devices:");
-            for dev in &devices {
-                println!(
-                    "  {}: {}  ({} MB total, {} MB free)",
-                    dev.id,
-                    dev.name,
-                    dev.vram.total / 1024 / 1024,
-                    dev.vram.free / 1024 / 1024,
-                );
-            }
-        }
+        whisper_type::gpu::list_gpu_devices();
         return Ok(());
     }
 
@@ -109,11 +99,25 @@ fn main() -> Result<()> {
     config.apply_language_override(args.language);
     config.apply_whisper_task_override(args.whisper_task);
     config.apply_silence_override(args.silence_ms);
-    if args.gpu {
-        config.use_gpu = true;
+    if let Some(backend_str) = args.gpu_backend {
+        config.gpu_backend = match backend_str.as_str() {
+            "auto" => whisper_type::gpu::GpuBackend::Auto,
+            "cuda" => whisper_type::gpu::GpuBackend::Cuda,
+            "vulkan" => whisper_type::gpu::GpuBackend::Vulkan,
+            "cpu" => whisper_type::gpu::GpuBackend::Cpu,
+            other => {
+                eprintln!(
+                    "Error: unknown --gpu-backend '{}'. Use: auto, cuda, vulkan, cpu",
+                    other
+                );
+                std::process::exit(1);
+            }
+        };
+    } else if args.gpu {
+        // --gpu forces Auto (overrides any "cpu" set in config.json), kept for backward compat
+        config.gpu_backend = whisper_type::gpu::GpuBackend::Auto;
     }
     if let Some(dev) = args.gpu_device {
-        config.use_gpu = true;
         config.gpu_device = dev;
     }
     config.dry_run = args.dry_run;
@@ -177,13 +181,17 @@ fn main() -> Result<()> {
     if config.dry_run {
         info!("Dry-run mode: text will be printed to stdout");
     }
-    if config.use_gpu {
-        info!(
-            "GPU inference: enabled (Vulkan, device {})",
-            config.gpu_device
-        );
-    } else {
-        info!("GPU inference: disabled (CPU)");
+    let resolved = whisper_type::gpu::detect_backend(&config.gpu_backend, config.gpu_device);
+    match &resolved {
+        whisper_type::gpu::ResolvedBackend::Cuda(dev) => {
+            info!("GPU: cuda (device {})", dev);
+        }
+        whisper_type::gpu::ResolvedBackend::Vulkan(dev) => {
+            info!("GPU: vulkan (device {})", dev);
+        }
+        whisper_type::gpu::ResolvedBackend::Cpu => {
+            info!("GPU: cpu");
+        }
     }
     info!(
         "WebRTC VAD aggressiveness: {} ({})",
@@ -232,9 +240,10 @@ fn main() -> Result<()> {
 
     // Start transcriber thread
     let config_t = config.clone();
+    let resolved_t = resolved.clone();
     let text_tx_t = text_tx.clone();
     let transcriber_handle = std::thread::spawn(move || {
-        let mut transcriber = match Transcriber::new(&config_t) {
+        let mut transcriber = match Transcriber::new(&config_t, &resolved_t) {
             Ok(t) => t,
             Err(e) => {
                 error!("Failed to initialize Whisper: {}", e);

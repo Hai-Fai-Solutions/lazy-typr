@@ -2,6 +2,8 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
+use crate::gpu::GpuBackend;
+
 /// Whisper inference task.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, clap::ValueEnum, Default)]
 #[serde(rename_all = "snake_case")]
@@ -42,11 +44,12 @@ pub struct Config {
     #[serde(default)]
     pub ptt_key: Option<String>,
 
-    /// Use GPU (Vulkan) for Whisper inference. Default: false (CPU).
+    /// GPU backend: auto (default), cuda, vulkan, cpu.
+    /// auto = detect NVIDIA → CUDA, else Vulkan, else CPU.
     #[serde(default)]
-    pub use_gpu: bool,
+    pub gpu_backend: GpuBackend,
 
-    /// Vulkan GPU device index. 0 = first device. Only used when use_gpu = true.
+    /// Device index for the active GPU backend (default: 0).
     #[serde(default)]
     pub gpu_device: u32,
 
@@ -89,7 +92,7 @@ impl Default for Config {
             vad_threshold: 0.01,
             log_level: default_log_level(),
             ptt_key: None,
-            use_gpu: false,
+            gpu_backend: GpuBackend::default(),
             gpu_device: 0,
             whisper_task: Task::default(),
             webrtc_vad_aggressiveness: default_webrtc_vad_aggressiveness(),
@@ -243,8 +246,8 @@ mod tests {
     }
 
     #[test]
-    fn test_default_use_gpu_is_false() {
-        assert!(!Config::default().use_gpu);
+    fn test_default_gpu_backend_is_auto() {
+        assert_eq!(Config::default().gpu_backend, crate::gpu::GpuBackend::Auto);
     }
 
     #[test]
@@ -278,18 +281,18 @@ mod tests {
     }
 
     #[test]
-    fn test_use_gpu_round_trips_through_json() {
+    fn test_gpu_backend_round_trips_through_json() {
         let cfg = Config {
-            use_gpu: true,
+            gpu_backend: crate::gpu::GpuBackend::Cuda,
             ..Config::default()
         };
         let json = serde_json::to_string(&cfg).unwrap();
         let restored: Config = serde_json::from_str(&json).unwrap();
-        assert!(restored.use_gpu);
+        assert_eq!(restored.gpu_backend, crate::gpu::GpuBackend::Cuda);
     }
 
     #[test]
-    fn test_use_gpu_absent_in_legacy_json_defaults_to_false() {
+    fn test_gpu_backend_absent_in_legacy_json_defaults_to_auto() {
         let json = r#"{
             "model_path": "/tmp/model.bin",
             "language": "de",
@@ -299,7 +302,7 @@ mod tests {
             "vad_threshold": 0.01
         }"#;
         let cfg: Config = serde_json::from_str(json).unwrap();
-        assert!(!cfg.use_gpu);
+        assert_eq!(cfg.gpu_backend, crate::gpu::GpuBackend::Auto);
     }
 
     // ── Serialization round-trip ──────────────────────────────────────────────

@@ -32,6 +32,16 @@ jobs:
           cache: true
           stripdown: true
 
+      - name: Install CUDA toolkit
+        uses: Jimver/cuda-toolkit@v0.2.22
+        with:
+          cuda: '12.6.3'
+          method: 'network'
+          sub-packages: '["nvcc", "cudart-dev"]'
+
+      - name: Install cuBLAS dev headers
+        run: sudo apt-get install -y libcublas-dev-12-6
+
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 

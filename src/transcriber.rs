@@ -3,6 +3,25 @@ use tracing::debug;
 use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters};
 
 use crate::config::{Config, Task};
+use crate::gpu::ResolvedBackend;
+
+pub(crate) fn backend_to_ctx_params(
+    backend: &ResolvedBackend,
+) -> WhisperContextParameters<'static> {
+    match backend {
+        ResolvedBackend::Cpu => WhisperContextParameters {
+            use_gpu: false,
+            ..Default::default()
+        },
+        ResolvedBackend::Cuda(device) | ResolvedBackend::Vulkan(device) => {
+            WhisperContextParameters {
+                use_gpu: true,
+                gpu_device: *device as std::ffi::c_int,
+                ..Default::default()
+            }
+        }
+    }
+}
 
 pub struct Transcriber {
     ctx: WhisperContext,
@@ -11,13 +30,10 @@ pub struct Transcriber {
 }
 
 impl Transcriber {
-    pub fn new(config: &Config) -> Result<Self> {
+    pub fn new(config: &Config, backend: &ResolvedBackend) -> Result<Self> {
         let ctx = WhisperContext::new_with_params(
             config.model_path.to_str().context("Invalid model path")?,
-            WhisperContextParameters {
-                use_gpu: config.use_gpu,
-                ..Default::default()
-            },
+            backend_to_ctx_params(backend),
         )
         .context("Failed to load Whisper model")?;
 
@@ -223,5 +239,30 @@ mod tests {
         let n = num_cpus();
         assert!(n >= 1, "num_cpus should be at least 1, got {}", n);
         assert!(n <= 8, "num_cpus should be capped at 8, got {}", n);
+    }
+
+    // ── backend_to_ctx_params ─────────────────────────────────────────────────
+
+    #[test]
+    fn test_whisper_ctx_params_cpu_disables_gpu() {
+        use crate::gpu::ResolvedBackend;
+        let params = backend_to_ctx_params(&ResolvedBackend::Cpu);
+        assert!(!params.use_gpu);
+    }
+
+    #[test]
+    fn test_whisper_ctx_params_cuda_enables_gpu_with_device() {
+        use crate::gpu::ResolvedBackend;
+        let params = backend_to_ctx_params(&ResolvedBackend::Cuda(2));
+        assert!(params.use_gpu);
+        assert_eq!(params.gpu_device, 2);
+    }
+
+    #[test]
+    fn test_whisper_ctx_params_vulkan_enables_gpu_with_device() {
+        use crate::gpu::ResolvedBackend;
+        let params = backend_to_ctx_params(&ResolvedBackend::Vulkan(1));
+        assert!(params.use_gpu);
+        assert_eq!(params.gpu_device, 1);
     }
 }
