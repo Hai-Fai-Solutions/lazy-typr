@@ -229,6 +229,7 @@ fn main() -> Result<()> {
     let transcriber_handle = std::thread::spawn(move || {
         let mut transcriber =
             match Transcriber::new(&config_t, &whisper_type::gpu::ResolvedBackend::Cpu) {
+                // TODO Task 7: replace Cpu placeholder with resolved backend
                 Ok(t) => t,
                 Err(e) => {
                     error!("Failed to initialize Whisper: {}", e);
