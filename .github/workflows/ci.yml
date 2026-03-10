@@ -73,7 +73,7 @@ jobs:
         with:
           cuda: '12.6.3'
           method: 'network'
-          sub-packages: '["nvcc", "cudart-dev"]'
+          sub-packages: '["nvcc", "cudart-dev", "libcublas-dev"]'
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -120,7 +120,7 @@ jobs:
         with:
           cuda: '12.6.3'
           method: 'network'
-          sub-packages: '["nvcc", "cudart-dev"]'
+          sub-packages: '["nvcc", "cudart-dev", "libcublas-dev"]'
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
