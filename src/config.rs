@@ -150,6 +150,13 @@ impl Config {
         }
     }
 
+    /// Apply CLI silence_ms override only when it is explicitly provided.
+    pub fn apply_silence_override(&mut self, silence_ms: Option<u64>) {
+        if let Some(silence_ms) = silence_ms {
+            self.silence_threshold_ms = silence_ms;
+        }
+    }
+
     /// Apply CLI whisper_task override only when it is explicitly provided.
     pub fn apply_whisper_task_override(&mut self, task: Option<Task>) {
         if let Some(task) = task {
@@ -499,6 +506,26 @@ mod tests {
         let json = serde_json::to_string(&cfg).unwrap();
         let restored: Config = serde_json::from_str(&json).unwrap();
         assert_eq!(restored.whisper_task, Task::Translate);
+    }
+
+    #[test]
+    fn test_apply_silence_override_with_none_keeps_existing_value() {
+        let mut cfg = Config {
+            silence_threshold_ms: 1200,
+            ..Config::default()
+        };
+        cfg.apply_silence_override(None);
+        assert_eq!(cfg.silence_threshold_ms, 1200);
+    }
+
+    #[test]
+    fn test_apply_silence_override_with_some_replaces_value() {
+        let mut cfg = Config {
+            silence_threshold_ms: 1200,
+            ..Config::default()
+        };
+        cfg.apply_silence_override(Some(500));
+        assert_eq!(cfg.silence_threshold_ms, 500);
     }
 
     #[test]

@@ -33,9 +33,9 @@ struct Args {
     #[arg(long)]
     list_devices: bool,
 
-    /// VAD silence threshold in milliseconds
-    #[arg(long, default_value = "800")]
-    silence_ms: u64,
+    /// VAD silence threshold in milliseconds (default from config or 800)
+    #[arg(long)]
+    silence_ms: Option<u64>,
 
     /// Push-to-talk mode: hold key to record (e.g. "ctrl+space")
     #[arg(long)]
@@ -116,6 +116,9 @@ fn main() -> Result<()> {
     } else if args.gpu {
         // --gpu forces Auto (overrides any "cpu" set in config.json), kept for backward compat
         config.gpu_backend = whisper_type::gpu::GpuBackend::Auto;
+    config.apply_silence_override(args.silence_ms);
+    if args.gpu {
+        config.use_gpu = true;
     }
     if let Some(dev) = args.gpu_device {
         config.gpu_device = dev;

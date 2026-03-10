@@ -9,7 +9,7 @@ Details: `language` no longer overwrites config unless `--language` is explicitl
 
 2. `ISSUE-1B`  
 Title: `silence_ms` flag always overwrites config  
-Status: `Open`  
+Status: `Solved`  
 Details: `silence_ms` is still unconditionally merged from CLI default.
 
 3. `ISSUE-2`  
