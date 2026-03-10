@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 This file is automatically maintained by [cocogitto](https://github.com/cocogitto/cocogitto).
 
 - - -
+## [v0.6.1](https://github.com/Hai-Fai-Solutions/lazy-typr/compare/847757d9c1cd10e020b66dbb7dba17fdbc50fb66..v0.6.1) - 2026-03-10
+#### Bug Fixes
+- **(config)** make --silence-ms explicit-only, preserve config value when omitted (#21) - ([847757d](https://github.com/Hai-Fai-Solutions/lazy-typr/commit/847757d9c1cd10e020b66dbb7dba17fdbc50fb66)) - Christian Polzer
+
+- - -
+
 ## [v0.6.0](https://github.com/Hai-Fai-Solutions/lazy-typr/compare/0370f37a77313c0cd4e8d16da778b099ea98234f..v0.6.0) - 2026-03-10
 #### Features
 - transcribe-by-default + CI paths allowlist (#20) - ([0370f37](https://github.com/Hai-Fai-Solutions/lazy-typr/commit/0370f37a77313c0cd4e8d16da778b099ea98234f)) - Christian Polzer
