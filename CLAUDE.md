@@ -50,8 +50,8 @@ Stored at `~/.config/whisper-type/config.json`. Key parameters:
 - `vad_threshold` — RMS energy threshold for voice detection (default: 0.01)
 - `log_level` — log verbosity: `"error"`, `"warn"`, `"info"`, `"debug"`, `"trace"` (default: `"info"`)
 - `ptt_key` — PTT key name (e.g. `"KEY_SPACE"`, `"KEY_CAPSLOCK"`); `null` = VAD mode (default)
-- `use_gpu` — Use Vulkan GPU for Whisper inference; `false` = CPU only (default)
-- `gpu_device` — Vulkan device index to use when `use_gpu` is true (default: `0`)
+- `gpu_backend` — GPU backend: `"auto"` (default), `"cuda"`, `"vulkan"`, `"cpu"`. Auto detects NVIDIA → CUDA, else Vulkan, else CPU.
+- `gpu_device` — Device index for the active GPU backend (default: `0`)
 
 Override priority (lowest → highest): `config.json` → CLI flag → `RUST_LOG` env var (log level only)
 
