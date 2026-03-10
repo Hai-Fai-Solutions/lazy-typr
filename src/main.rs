@@ -110,10 +110,9 @@ fn main() -> Result<()> {
     config.apply_whisper_task_override(args.whisper_task);
     config.silence_threshold_ms = args.silence_ms;
     if args.gpu {
-        config.use_gpu = true;
+        config.gpu_backend = whisper_type::gpu::GpuBackend::Auto; // TODO Task 7: map --gpu flag to backend
     }
     if let Some(dev) = args.gpu_device {
-        config.use_gpu = true;
         config.gpu_device = dev;
     }
     config.dry_run = args.dry_run;
@@ -177,14 +176,8 @@ fn main() -> Result<()> {
     if config.dry_run {
         info!("Dry-run mode: text will be printed to stdout");
     }
-    if config.use_gpu {
-        info!(
-            "GPU inference: enabled (Vulkan, device {})",
-            config.gpu_device
-        );
-    } else {
-        info!("GPU inference: disabled (CPU)");
-    }
+    // TODO Task 7: log resolved backend after detect_backend call
+    info!("GPU backend: {:?}", config.gpu_backend);
     info!(
         "WebRTC VAD aggressiveness: {} ({})",
         config.webrtc_vad_aggressiveness,

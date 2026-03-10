@@ -15,7 +15,7 @@ impl Transcriber {
         let ctx = WhisperContext::new_with_params(
             config.model_path.to_str().context("Invalid model path")?,
             WhisperContextParameters {
-                use_gpu: config.use_gpu,
+                use_gpu: false, // TODO Task 6: replace with resolved backend
                 ..Default::default()
             },
         )
