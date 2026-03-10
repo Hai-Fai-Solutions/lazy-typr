@@ -114,7 +114,7 @@ fn main() -> Result<()> {
             }
         };
     } else if args.gpu {
-        // --gpu is a no-op (Auto is the default) but kept for backward compat
+        // --gpu forces Auto (overrides any "cpu" set in config.json), kept for backward compat
         config.gpu_backend = whisper_type::gpu::GpuBackend::Auto;
     }
     if let Some(dev) = args.gpu_device {
