@@ -128,10 +128,10 @@ jobs:
       - name: Install cuBLAS dev and runtime
         run: sudo apt-get install -y libcublas-dev-12-6 libcublas-12-6
 
-      - name: Set up CUDA driver stub for test execution
+      - name: Set up CUDA library paths for test execution
         run: |
           sudo ln -sf /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/stubs/libcuda.so.1
-          echo "LD_LIBRARY_PATH=/usr/local/cuda/lib64/stubs" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/local/cuda/lib64/stubs" >> $GITHUB_ENV
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
