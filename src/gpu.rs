@@ -57,18 +57,19 @@ pub fn list_gpu_devices() {
             any = true;
             println!("CUDA devices (NVIDIA):");
             for i in 0..count {
-                if let Ok(dev) = nvml.device_by_index(i) {
-                    let name = dev.name().unwrap_or_else(|_| "unknown".to_string());
-                    let mem = dev.memory_info();
-                    match mem {
-                        Ok(m) => println!(
-                            "  {}: {}  ({} MB total, {} MB free)",
-                            i,
-                            name,
-                            m.total / 1024 / 1024,
-                            m.free / 1024 / 1024,
-                        ),
-                        Err(_) => println!("  {}: {}", i, name),
+                match nvml.device_by_index(i) {
+                    Err(_) => println!("  {i}: (failed to query device)"),
+                    Ok(dev) => {
+                        let name = dev.name().unwrap_or_else(|_| "unknown".to_string());
+                        match dev.memory_info() {
+                            Ok(m) => println!(
+                                "  {i}: {}  ({} MB total, {} MB free)",
+                                name,
+                                m.total / 1024 / 1024,
+                                m.free / 1024 / 1024,
+                            ),
+                            Err(_) => println!("  {i}: {name}"),
+                        }
                     }
                 }
             }
