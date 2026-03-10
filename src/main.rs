@@ -227,13 +227,14 @@ fn main() -> Result<()> {
     let config_t = config.clone();
     let text_tx_t = text_tx.clone();
     let transcriber_handle = std::thread::spawn(move || {
-        let mut transcriber = match Transcriber::new(&config_t) {
-            Ok(t) => t,
-            Err(e) => {
-                error!("Failed to initialize Whisper: {}", e);
-                std::process::exit(1);
-            }
-        };
+        let mut transcriber =
+            match Transcriber::new(&config_t, &whisper_type::gpu::ResolvedBackend::Cpu) {
+                Ok(t) => t,
+                Err(e) => {
+                    error!("Failed to initialize Whisper: {}", e);
+                    std::process::exit(1);
+                }
+            };
         info!("Whisper model loaded ✓");
         while let Ok(samples) = audio_rx.recv() {
             match transcriber.transcribe(&samples) {
