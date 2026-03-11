@@ -4,15 +4,6 @@ use std::path::PathBuf;
 
 use crate::gpu::GpuBackend;
 
-/// Whisper inference task.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, clap::ValueEnum, Default)]
-#[serde(rename_all = "snake_case")]
-pub enum Task {
-    #[default]
-    Transcribe,
-    Translate,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     /// Path to the Whisper GGML model
@@ -53,9 +44,9 @@ pub struct Config {
     #[serde(default)]
     pub gpu_device: u32,
 
-    /// Whisper inference task: transcribe (default) or translate.
+    /// Translate speech to English instead of transcribing in the source language.
     #[serde(default)]
-    pub whisper_task: Task,
+    pub translate: bool,
 
     /// WebRTC VAD aggressiveness level (0 = least aggressive, 3 = most aggressive).
     /// Higher values filter more background noise but may clip quiet speech.
@@ -94,7 +85,7 @@ impl Default for Config {
             ptt_key: None,
             gpu_backend: GpuBackend::default(),
             gpu_device: 0,
-            whisper_task: Task::default(),
+            translate: false,
             webrtc_vad_aggressiveness: default_webrtc_vad_aggressiveness(),
             dry_run: false,
         }
@@ -157,10 +148,10 @@ impl Config {
         }
     }
 
-    /// Apply CLI whisper_task override only when it is explicitly provided.
-    pub fn apply_whisper_task_override(&mut self, task: Option<Task>) {
-        if let Some(task) = task {
-            self.whisper_task = task;
+    /// Apply CLI translate override only when the flag is explicitly passed.
+    pub fn apply_translate_override(&mut self, translate: bool) {
+        if translate {
+            self.translate = true;
         }
     }
 
@@ -420,15 +411,15 @@ mod tests {
         assert_eq!(cfg.webrtc_vad_aggressiveness, 2);
     }
 
-    // ── Task enum ─────────────────────────────────────────────────────────────
+    // ── translate flag ────────────────────────────────────────────────────────
 
     #[test]
-    fn test_default_whisper_task_is_transcribe() {
-        assert_eq!(Config::default().whisper_task, Task::Transcribe);
+    fn test_default_translate_is_false() {
+        assert!(!Config::default().translate);
     }
 
     #[test]
-    fn test_task_translate_deserializes_from_json() {
+    fn test_translate_true_deserializes_from_json() {
         let json = r#"{
             "model_path": "/tmp/model.bin",
             "language": "de",
@@ -436,14 +427,14 @@ mod tests {
             "min_speech_ms": 300,
             "max_buffer_secs": 30.0,
             "vad_threshold": 0.01,
-            "whisper_task": "translate"
+            "translate": true
         }"#;
         let cfg: Config = serde_json::from_str(json).unwrap();
-        assert_eq!(cfg.whisper_task, Task::Translate);
+        assert!(cfg.translate);
     }
 
     #[test]
-    fn test_task_transcribe_deserializes_from_json() {
+    fn test_translate_false_deserializes_from_json() {
         let json = r#"{
             "model_path": "/tmp/model.bin",
             "language": "de",
@@ -451,29 +442,14 @@ mod tests {
             "min_speech_ms": 300,
             "max_buffer_secs": 30.0,
             "vad_threshold": 0.01,
-            "whisper_task": "transcribe"
+            "translate": false
         }"#;
         let cfg: Config = serde_json::from_str(json).unwrap();
-        assert_eq!(cfg.whisper_task, Task::Transcribe);
+        assert!(!cfg.translate);
     }
 
     #[test]
-    fn test_task_invalid_value_fails_deserialization() {
-        let json = r#"{
-            "model_path": "/tmp/model.bin",
-            "language": "de",
-            "silence_threshold_ms": 800,
-            "min_speech_ms": 300,
-            "max_buffer_secs": 30.0,
-            "vad_threshold": 0.01,
-            "whisper_task": "Translate"
-        }"#;
-        let result: Result<Config, _> = serde_json::from_str(json);
-        assert!(result.is_err(), "uppercase 'Translate' must be rejected");
-    }
-
-    #[test]
-    fn test_task_absent_in_legacy_json_defaults_to_transcribe() {
+    fn test_translate_absent_in_legacy_json_defaults_to_false() {
         let json = r#"{
             "model_path": "/tmp/model.bin",
             "language": "de",
@@ -483,29 +459,46 @@ mod tests {
             "vad_threshold": 0.01
         }"#;
         let cfg: Config = serde_json::from_str(json).unwrap();
-        assert_eq!(cfg.whisper_task, Task::Transcribe);
+        assert!(!cfg.translate);
     }
 
     #[test]
-    fn test_task_roundtrips_transcribe() {
+    fn test_translate_roundtrips_true() {
         let cfg = Config {
-            whisper_task: Task::Transcribe,
+            translate: true,
             ..Config::default()
         };
         let json = serde_json::to_string(&cfg).unwrap();
         let restored: Config = serde_json::from_str(&json).unwrap();
-        assert_eq!(restored.whisper_task, Task::Transcribe);
+        assert!(restored.translate);
     }
 
     #[test]
-    fn test_task_roundtrips_translate() {
+    fn test_translate_roundtrips_false() {
         let cfg = Config {
-            whisper_task: Task::Translate,
+            translate: false,
             ..Config::default()
         };
         let json = serde_json::to_string(&cfg).unwrap();
         let restored: Config = serde_json::from_str(&json).unwrap();
-        assert_eq!(restored.whisper_task, Task::Translate);
+        assert!(!restored.translate);
+    }
+
+    #[test]
+    fn test_apply_translate_override_false_keeps_existing() {
+        let mut cfg = Config {
+            translate: true,
+            ..Config::default()
+        };
+        cfg.apply_translate_override(false);
+        assert!(cfg.translate);
+    }
+
+    #[test]
+    fn test_apply_translate_override_true_sets_translate() {
+        let mut cfg = Config::default(); // translate = false
+        cfg.apply_translate_override(true);
+        assert!(cfg.translate);
     }
 
     #[test]
@@ -526,25 +519,5 @@ mod tests {
         };
         cfg.apply_silence_override(Some(500));
         assert_eq!(cfg.silence_threshold_ms, 500);
-    }
-
-    #[test]
-    fn test_apply_whisper_task_override_with_none_keeps_existing() {
-        let mut cfg = Config {
-            whisper_task: Task::Translate,
-            ..Config::default()
-        };
-        cfg.apply_whisper_task_override(None);
-        assert_eq!(cfg.whisper_task, Task::Translate);
-    }
-
-    #[test]
-    fn test_apply_whisper_task_override_with_some_replaces_value() {
-        let mut cfg = Config {
-            whisper_task: Task::Translate,
-            ..Config::default()
-        };
-        cfg.apply_whisper_task_override(Some(Task::Transcribe));
-        assert_eq!(cfg.whisper_task, Task::Transcribe);
     }
 }

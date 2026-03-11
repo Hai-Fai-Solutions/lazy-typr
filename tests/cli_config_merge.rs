@@ -1,4 +1,4 @@
-use whisper_type::config::{Config, Task};
+use whisper_type::config::Config;
 
 #[test]
 fn no_cli_flags_keeps_config_values() {
@@ -53,24 +53,4 @@ fn cli_silence_ms_overrides_config() {
     };
     cfg.apply_silence_override(Some(400));
     assert_eq!(cfg.silence_threshold_ms, 400);
-}
-
-#[test]
-fn no_cli_task_keeps_config_task() {
-    let mut cfg = Config {
-        whisper_task: Task::Translate,
-        ..Config::default()
-    };
-    cfg.apply_whisper_task_override(None);
-    assert_eq!(cfg.whisper_task, Task::Translate);
-}
-
-#[test]
-fn cli_task_overrides_config_task() {
-    let mut cfg = Config {
-        whisper_task: Task::Translate,
-        ..Config::default()
-    };
-    cfg.apply_whisper_task_override(Some(Task::Transcribe));
-    assert_eq!(cfg.whisper_task, Task::Transcribe);
 }
