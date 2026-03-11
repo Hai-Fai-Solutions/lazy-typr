@@ -60,7 +60,7 @@ impl Transcriber {
             params.set_language(Some(&self.language));
         }
 
-        // Task: explicitly set on every inference to prevent silent drift
+        // Translate flag: explicitly set on every inference to prevent silent drift
         params.set_translate(self.translate);
 
         // Performance settings
