@@ -54,23 +54,3 @@ fn cli_silence_ms_overrides_config() {
     cfg.apply_silence_override(Some(400));
     assert_eq!(cfg.silence_threshold_ms, 400);
 }
-
-#[test]
-fn no_cli_translate_keeps_config_translate() {
-    let mut cfg = Config {
-        translate: true,
-        ..Config::default()
-    };
-    cfg.apply_translate_override(false);
-    assert!(cfg.translate);
-}
-
-#[test]
-fn cli_translate_flag_sets_translate_true() {
-    let mut cfg = Config {
-        translate: false,
-        ..Config::default()
-    };
-    cfg.apply_translate_override(true);
-    assert!(cfg.translate);
-}

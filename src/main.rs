@@ -168,7 +168,9 @@ fn main() -> Result<()> {
     info!("whisper-type starting...");
     info!("Model: {}", config.model_path.display());
     info!("Language: {}", config.language);
-    info!("Translate: {}", config.translate);
+    if config.translate {
+        info!("Translate: enabled");
+    }
     if config.ptt_key.is_none() {
         info!("Silence threshold: {}ms", config.silence_threshold_ms);
     }
