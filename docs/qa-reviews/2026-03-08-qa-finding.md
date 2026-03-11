@@ -12,10 +12,10 @@ Title: `silence_ms` flag always overwrites config
 Status: `Solved`  
 Details: `silence_ms` is still unconditionally merged from CLI default.
 
-3. `ISSUE-2`  
-Title: Silent fallback on `--whisper-task` typo  
-Status: `Open`  
-Details: `--whisper-task trnascribe` silently falls back without warning.
+3. `ISSUE-2`
+Title: Silent fallback on `--whisper-task` typo
+Status: `Solved`
+Details: `--whisper-task` removed entirely. Replaced with `--translate` boolean flag — no string to mistype.
 
 4. `ISSUE-3`  
 Title: Missing serde tests for `Task` behavior  
