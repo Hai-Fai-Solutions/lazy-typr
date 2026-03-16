@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use tracing::debug;
 use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters};
 
-use crate::config::{Config, Task};
+use crate::config::Config;
 use crate::gpu::ResolvedBackend;
 
 pub(crate) fn backend_to_ctx_params(
@@ -26,7 +26,7 @@ pub(crate) fn backend_to_ctx_params(
 pub struct Transcriber {
     ctx: WhisperContext,
     language: String,
-    task: Task,
+    translate: bool,
 }
 
 impl Transcriber {
@@ -40,7 +40,7 @@ impl Transcriber {
         Ok(Self {
             ctx,
             language: config.language.clone(),
-            task: config.whisper_task.clone(),
+            translate: config.translate,
         })
     }
 
@@ -60,8 +60,8 @@ impl Transcriber {
             params.set_language(Some(&self.language));
         }
 
-        // Task: explicitly set on every inference to prevent silent drift
-        params.set_translate(matches!(self.task, Task::Translate));
+        // Translate flag: explicitly set on every inference to prevent silent drift
+        params.set_translate(self.translate);
 
         // Performance settings
         params.set_n_threads(num_cpus());
